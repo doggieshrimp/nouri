@@ -1,5 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, type FormEvent } from "react";
 import { Plus, Trash2, Flame, Search, X } from "lucide-react";
+import { FOOD_DB } from "./data/foods";
+import { goalPercent, scaleFood, sumMacros, type Entry, type Food } from "./lib/nutrition";
 
 // ---- Design tokens ----
 // Paper:      #FAF8F3   Ink: #1A1A1A
@@ -11,66 +13,17 @@ const ALERT = "#C1440E";
 const GOOD = "#4A7A4E";
 const GOLD = "#B8935B";
 
-function uid() {
-  return Math.random().toString(36).slice(2, 9);
-}
+const EMPTY_CUSTOM = { name: "", calories: "", protein: "", carbs: "", fat: "" };
+type CustomForm = typeof EMPTY_CUSTOM;
+const MACRO_FIELDS = ["protein", "carbs", "fat"] as const;
 
-// ---- Local food database ----
-// Values are per 100g, sourced from typical USDA-style reference values.
-// This is a starter set — extend it, or swap in a live API (e.g. USDA
-// FoodData Central) for foods that aren't in here.
-const FOOD_DB = [
-  { name: "Chicken breast, raw", calories: 165, protein: 31, carbs: 0, fat: 3.6 },
-  { name: "Chicken thigh, raw", calories: 209, protein: 26, carbs: 0, fat: 10.9 },
-  { name: "Ground beef, 85% lean", calories: 250, protein: 26, carbs: 0, fat: 17 },
-  { name: "Salmon, raw", calories: 208, protein: 20, carbs: 0, fat: 13 },
-  { name: "Tuna, canned in water", calories: 116, protein: 26, carbs: 0, fat: 1 },
-  { name: "Egg, whole", calories: 155, protein: 13, carbs: 1.1, fat: 11 },
-  { name: "Egg white", calories: 52, protein: 11, carbs: 0.7, fat: 0.2 },
-  { name: "Tofu, firm", calories: 144, protein: 15.5, carbs: 3, fat: 8.7 },
-  { name: "Greek yogurt, plain nonfat", calories: 59, protein: 10, carbs: 3.6, fat: 0.4 },
-  { name: "Cottage cheese, low fat", calories: 72, protein: 12, carbs: 3, fat: 1 },
-  { name: "Milk, whole", calories: 61, protein: 3.2, carbs: 4.8, fat: 3.3 },
-  { name: "Cheddar cheese", calories: 403, protein: 25, carbs: 1.3, fat: 33 },
-  { name: "White rice, cooked", calories: 130, protein: 2.7, carbs: 28, fat: 0.3 },
-  { name: "Brown rice, cooked", calories: 123, protein: 2.7, carbs: 26, fat: 1 },
-  { name: "Oats, dry", calories: 389, protein: 17, carbs: 66, fat: 7 },
-  { name: "Quinoa, cooked", calories: 120, protein: 4.4, carbs: 21, fat: 1.9 },
-  { name: "Pasta, cooked", calories: 131, protein: 5, carbs: 25, fat: 1.1 },
-  { name: "Bread, white", calories: 265, protein: 9, carbs: 49, fat: 3.2 },
-  { name: "Bread, whole wheat", calories: 247, protein: 13, carbs: 41, fat: 4.2 },
-  { name: "Potato, baked", calories: 93, protein: 2.5, carbs: 21, fat: 0.1 },
-  { name: "Sweet potato, baked", calories: 90, protein: 2, carbs: 21, fat: 0.2 },
-  { name: "Banana", calories: 89, protein: 1.1, carbs: 23, fat: 0.3 },
-  { name: "Apple", calories: 52, protein: 0.3, carbs: 14, fat: 0.2 },
-  { name: "Avocado", calories: 160, protein: 2, carbs: 8.5, fat: 15 },
-  { name: "Broccoli, raw", calories: 34, protein: 2.8, carbs: 7, fat: 0.4 },
-  { name: "Spinach, raw", calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4 },
-  { name: "Carrot, raw", calories: 41, protein: 0.9, carbs: 10, fat: 0.2 },
-  { name: "Almonds", calories: 579, protein: 21, carbs: 22, fat: 50 },
-  { name: "Peanut butter", calories: 588, protein: 25, carbs: 20, fat: 50 },
-  { name: "Olive oil", calories: 884, protein: 0, carbs: 0, fat: 100 },
-  { name: "Butter", calories: 717, protein: 0.9, carbs: 0.1, fat: 81 },
-  { name: "Black beans, cooked", calories: 132, protein: 8.9, carbs: 24, fat: 0.5 },
-  { name: "Chickpeas, cooked", calories: 164, protein: 8.9, carbs: 27, fat: 2.6 },
-  { name: "Lentils, cooked", calories: 116, protein: 9, carbs: 20, fat: 0.4 },
-  { name: "Shrimp, cooked", calories: 99, protein: 24, carbs: 0.2, fat: 0.3 },
-  { name: "Pork chop, raw", calories: 231, protein: 22, carbs: 0, fat: 15 },
-];
-
-function scaleFood(food, grams) {
-  const factor = grams / 100;
-  return {
-    calories: Math.round(food.calories * factor),
-    protein: Math.round(food.protein * factor * 10) / 10,
-    carbs: Math.round(food.carbs * factor * 10) / 10,
-    fat: Math.round(food.fat * factor * 10) / 10,
-  };
+function uid(): string {
+  return crypto.randomUUID();
 }
 
 export default function CalorieTracker() {
   const [goal, setGoal] = useState(2000);
-  const [entries, setEntries] = useState([
+  const [entries, setEntries] = useState<Entry[]>([
     { id: uid(), name: "Oatmeal, 1 cup", calories: 300, protein: 10, carbs: 54, fat: 6 },
     { id: uid(), name: "Coffee, black", calories: 5, protein: 0, carbs: 0, fat: 0 },
   ]);
@@ -79,12 +32,12 @@ export default function CalorieTracker() {
 
   // Database lookup state
   const [query, setQuery] = useState("");
-  const [selectedFood, setSelectedFood] = useState(null);
-  const [grams, setGrams] = useState(100);
+  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
+  const [grams, setGrams] = useState("100");
 
   // Manual/custom entry state
   const [showCustom, setShowCustom] = useState(false);
-  const [custom, setCustom] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+  const [custom, setCustom] = useState<CustomForm>(EMPTY_CUSTOM);
 
   const matches = useMemo(() => {
     if (!query.trim() || selectedFood) return [];
@@ -92,38 +45,29 @@ export default function CalorieTracker() {
     return FOOD_DB.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 6);
   }, [query, selectedFood]);
 
-  const preview = selectedFood ? scaleFood(selectedFood, Number(grams) || 0) : null;
+  const gramsNum = Number(grams) || 0;
+  const preview = selectedFood ? scaleFood(selectedFood, gramsNum) : null;
 
-  const totals = useMemo(() => {
-    return entries.reduce(
-      (acc, e) => ({
-        calories: acc.calories + Number(e.calories || 0),
-        protein: acc.protein + Number(e.protein || 0),
-        carbs: acc.carbs + Number(e.carbs || 0),
-        fat: acc.fat + Number(e.fat || 0),
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
-  }, [entries]);
+  const totals = useMemo(() => sumMacros(entries), [entries]);
 
   const remaining = goal - totals.calories;
-  const pctOfGoal = Math.min(100, Math.round((totals.calories / goal) * 100));
+  const pctOfGoal = goalPercent(totals.calories, goal);
   const over = remaining < 0;
 
-  function addFromDatabase(e) {
+  function addFromDatabase(e: FormEvent) {
     e.preventDefault();
-    if (!selectedFood || !grams) return;
-    const scaled = scaleFood(selectedFood, Number(grams));
+    if (!selectedFood || gramsNum <= 0) return;
+    const scaled = scaleFood(selectedFood, gramsNum);
     setEntries((prev) => [
       ...prev,
-      { id: uid(), name: `${selectedFood.name} (${grams}g)`, ...scaled },
+      { id: uid(), name: `${selectedFood.name} (${gramsNum}g)`, ...scaled },
     ]);
     setQuery("");
     setSelectedFood(null);
-    setGrams(100);
+    setGrams("100");
   }
 
-  function addCustom(e) {
+  function addCustom(e: FormEvent) {
     e.preventDefault();
     if (!custom.name.trim() || !custom.calories) return;
     setEntries((prev) => [
@@ -137,19 +81,21 @@ export default function CalorieTracker() {
         fat: Number(custom.fat) || 0,
       },
     ]);
-    setCustom({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+    setCustom(EMPTY_CUSTOM);
     setShowCustom(false);
   }
 
-  function removeEntry(id) {
+  function removeEntry(id: string) {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   }
 
-  const today = new Date().toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  const [today] = useState(() =>
+    new Date().toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    }),
+  );
 
   return (
     <div
@@ -364,7 +310,7 @@ export default function CalorieTracker() {
               />
             </div>
             <div className="flex gap-2 mb-3">
-              {["protein", "carbs", "fat"].map((k) => (
+              {MACRO_FIELDS.map((k) => (
                 <input
                   key={k}
                   placeholder={`${k[0].toUpperCase()}${k.slice(1)} g`}
