@@ -1,7 +1,11 @@
 import { useState, useMemo, type FormEvent } from "react";
-import { Plus, Trash2, Flame, Search, X } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { ChevronLeft, ChevronRight, Plus, Trash2, Flame, Search, X } from "lucide-react";
+import BackupControls from "./BackupControls";
 import { FOOD_DB } from "./data/foods";
-import { goalPercent, scaleFood, sumMacros, type Entry, type Food } from "./lib/nutrition";
+import { addEntry, DEFAULT_GOAL, deleteEntry, getEntriesForDate, getGoal, setGoal, type LogEntry } from "./db";
+import { addDays, formatDateKey, todayKey, type DateKey } from "./lib/dates";
+import { goalPercent, scaleFood, sumMacros, type Food } from "./lib/nutrition";
 
 // ---- Design tokens ----
 // Paper:      #FAF8F3   Ink: #1A1A1A
@@ -16,19 +20,22 @@ const GOLD = "#B8935B";
 const EMPTY_CUSTOM = { name: "", calories: "", protein: "", carbs: "", fat: "" };
 type CustomForm = typeof EMPTY_CUSTOM;
 const MACRO_FIELDS = ["protein", "carbs", "fat"] as const;
-
-function uid(): string {
-  return crypto.randomUUID();
-}
+const NO_ENTRIES: LogEntry[] = [];
 
 export default function CalorieTracker() {
-  const [goal, setGoal] = useState(2000);
-  const [entries, setEntries] = useState<Entry[]>([
-    { id: uid(), name: "Oatmeal, 1 cup", calories: 300, protein: 10, carbs: 54, fat: 6 },
-    { id: uid(), name: "Coffee, black", calories: 5, protein: 0, carbs: 0, fat: 0 },
-  ]);
+  const [date, setDate] = useState<DateKey>(todayKey);
+  const isToday = date === todayKey();
 
-  const [editingGoal, setEditingGoal] = useState(false);
+  const goal = useLiveQuery(getGoal) ?? DEFAULT_GOAL;
+  // useLiveQuery keeps returning the previous day's result until the new query
+  // resolves, so tag results with their date and ignore ones for another day.
+  const dayResult = useLiveQuery(
+    async () => ({ date, entries: await getEntriesForDate(date) }),
+    [date],
+  );
+  const entries = dayResult?.date === date ? dayResult.entries : NO_ENTRIES;
+
+  const [goalDraft, setGoalDraft] = useState<string | null>(null);
 
   // Database lookup state
   const [query, setQuery] = useState("");
@@ -54,48 +61,33 @@ export default function CalorieTracker() {
   const pctOfGoal = goalPercent(totals.calories, goal);
   const over = remaining < 0;
 
-  function addFromDatabase(e: FormEvent) {
+  async function addFromDatabase(e: FormEvent) {
     e.preventDefault();
     if (!selectedFood || gramsNum <= 0) return;
-    const scaled = scaleFood(selectedFood, gramsNum);
-    setEntries((prev) => [
-      ...prev,
-      { id: uid(), name: `${selectedFood.name} (${gramsNum}g)`, ...scaled },
-    ]);
+    await addEntry(date, { name: `${selectedFood.name} (${gramsNum}g)`, ...scaleFood(selectedFood, gramsNum) });
     setQuery("");
     setSelectedFood(null);
     setGrams("100");
   }
 
-  function addCustom(e: FormEvent) {
+  async function addCustom(e: FormEvent) {
     e.preventDefault();
     if (!custom.name.trim() || !custom.calories) return;
-    setEntries((prev) => [
-      ...prev,
-      {
-        id: uid(),
-        name: custom.name.trim(),
-        calories: Number(custom.calories) || 0,
-        protein: Number(custom.protein) || 0,
-        carbs: Number(custom.carbs) || 0,
-        fat: Number(custom.fat) || 0,
-      },
-    ]);
+    await addEntry(date, {
+      name: custom.name.trim(),
+      calories: Number(custom.calories) || 0,
+      protein: Number(custom.protein) || 0,
+      carbs: Number(custom.carbs) || 0,
+      fat: Number(custom.fat) || 0,
+    });
     setCustom(EMPTY_CUSTOM);
     setShowCustom(false);
   }
 
-  function removeEntry(id: string) {
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+  function saveGoal() {
+    if (goalDraft !== null) void setGoal(Math.max(0, Math.round(Number(goalDraft) || 0)));
+    setGoalDraft(null);
   }
-
-  const [today] = useState(() =>
-    new Date().toLocaleDateString(undefined, {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    }),
-  );
 
   return (
     <div
@@ -106,7 +98,38 @@ export default function CalorieTracker() {
         {/* Masthead */}
         <div className="flex items-baseline justify-between mb-1">
           <h1 className="text-2xl font-black tracking-tight uppercase">Daily Log</h1>
-          <span className="text-xs font-mono uppercase tracking-wide opacity-70">{today}</span>
+          {!isToday && (
+            <button
+              type="button"
+              onClick={() => setDate(todayKey())}
+              className="text-xs font-bold uppercase tracking-wide underline"
+            >
+              Back to today
+            </button>
+          )}
+        </div>
+        <div className="flex items-center justify-between mb-1">
+          <button
+            type="button"
+            onClick={() => setDate((d) => addDays(d, -1))}
+            aria-label="Previous day"
+            className="opacity-60 hover:opacity-100 p-1 -ml-1"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <span className="text-xs font-mono uppercase tracking-wide opacity-70">
+            {isToday ? "Today · " : ""}
+            {formatDateKey(date)}
+          </span>
+          <button
+            type="button"
+            onClick={() => setDate((d) => addDays(d, 1))}
+            aria-label="Next day"
+            disabled={isToday}
+            className="opacity-60 hover:opacity-100 disabled:opacity-20 p-1 -mr-1"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
         <div style={{ height: 6, background: INK }} />
 
@@ -120,17 +143,19 @@ export default function CalorieTracker() {
           <div className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid ${INK}` }}>
             <button
               className="text-xs uppercase tracking-wide font-bold underline decoration-dotted"
-              onClick={() => setEditingGoal((v) => !v)}
+              onClick={() => setGoalDraft((v) => (v === null ? String(goal) : v))}
             >
               Daily goal
             </button>
-            {editingGoal ? (
+            {goalDraft !== null ? (
               <input
                 autoFocus
                 type="number"
-                value={goal}
-                onChange={(ev) => setGoal(Number(ev.target.value) || 0)}
-                onBlur={() => setEditingGoal(false)}
+                aria-label="Daily calorie goal"
+                value={goalDraft}
+                onChange={(ev) => setGoalDraft(ev.target.value)}
+                onBlur={saveGoal}
+                onKeyDown={(ev) => ev.key === "Enter" && saveGoal()}
                 className="w-24 text-right font-mono font-bold bg-transparent border-b outline-none"
                 style={{ borderColor: INK }}
               />
@@ -335,11 +360,11 @@ export default function CalorieTracker() {
         {/* Entry list */}
         <div className="mt-6">
           <div className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: GOLD }}>
-            Today&rsquo;s entries
+            {isToday ? "Today’s entries" : "Entries"}
           </div>
           {entries.length === 0 && (
             <div className="text-sm opacity-60 italic py-4 text-center">
-              Nothing logged yet. Add your first item above.
+              {isToday ? "Nothing logged yet. Add your first item above." : "Nothing logged this day."}
             </div>
           )}
           <ul>
@@ -358,7 +383,7 @@ export default function CalorieTracker() {
                 <div className="flex items-center gap-3">
                   <span className="font-mono font-bold text-sm">{e.calories}</span>
                   <button
-                    onClick={() => removeEntry(e.id)}
+                    onClick={() => deleteEntry(e.id)}
                     aria-label={`Remove ${e.name}`}
                     className="opacity-50 hover:opacity-100"
                   >
@@ -369,6 +394,8 @@ export default function CalorieTracker() {
             ))}
           </ul>
         </div>
+
+        <BackupControls />
       </div>
     </div>
   );
