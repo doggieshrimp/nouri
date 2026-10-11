@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Calculator, ChevronLeft, ChevronRight, Flame, Type } from "lucide-react";
+import AboutFooter from "./components/AboutFooter";
 import BackupControls from "./components/BackupControls";
 import DisplaySettings from "./components/DisplaySettings";
 import EntryList from "./components/EntryList";
@@ -183,6 +184,7 @@ export default function CalorieTracker() {
         <FoodSearch date={date} />
         <EntryList entries={entries} isToday={isToday} />
         <BackupControls />
+        <AboutFooter />
       </div>
     </div>
   );

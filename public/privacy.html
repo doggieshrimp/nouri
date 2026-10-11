@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Daily Log privacy policy</title>
+    <meta name="description" content="How the Daily Log calorie tracker handles your data: no account, no ads, no tracking, and your food log stays on your phone." />
+    <style>
+      :root {
+        --paper: #faf8f3;
+        --ink: #1a1a1a;
+        --gold: #7a5c2e;
+        --rule: #ddd6c4;
+      }
+      * { box-sizing: border-box; }
+      html { font-size: 100%; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+        line-height: 1.6;
+        padding: max(16px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
+      }
+      main { max-width: 40rem; margin: 0 auto; }
+      h1 { font-size: 1.75rem; line-height: 1.2; margin: 0.5rem 0 0.25rem; }
+      h2 { font-size: 1.15rem; margin: 2rem 0 0.5rem; color: var(--gold); }
+      .date { opacity: 0.75; margin: 0 0 1.5rem; }
+      .summary { border: 2px solid var(--ink); padding: 0.75rem 1rem; }
+      .summary ul { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+      li { margin-bottom: 0.35rem; }
+      a { color: inherit; }
+      hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0 1rem; }
+      .back { display: inline-block; margin-bottom: 0.5rem; }
+    </style>
+    <script>
+      // Match the reader's chosen background and text size from the app, if any.
+      try {
+        var a = JSON.parse(localStorage.getItem("daily-log:appearance") || "null");
+        var papers = { cream: "#FAF8F3", yellow: "#FBF3D0", blue: "#E4EEF8", mint: "#E3F2E6", peach: "#FBE8DC", dark: "#1C1C1A" };
+        if (a && papers[a.background]) {
+          var s = document.documentElement.style;
+          s.setProperty("--paper", papers[a.background]);
+          if (a.background === "dark") {
+            s.setProperty("--ink", "#EEEAE2");
+            s.setProperty("--gold", "#D9B77E");
+            s.setProperty("--rule", "#3A3936");
+            s.colorScheme = "dark";
+          }
+          if (typeof a.textSize === "number") s.fontSize = a.textSize * 100 + "%";
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <main>
+      <a class="back" id="back" href="./" hidden>&larr; Back to Daily Log</a>
+      <script>
+        // Only show the back link when opened from inside the app.
+        if (history.length > 1) {
+          var back = document.getElementById("back");
+          back.hidden = false;
+          back.addEventListener("click", function (e) { e.preventDefault(); history.back(); });
+        }
+      </script>
+
+      <h1>Daily Log privacy policy</h1>
+      <p class="date">Last updated: 11 October 2026</p>
+
+      <div class="summary">
+        <strong>The short version</strong>
+        <ul>
+          <li>There is no account, no adverts, no tracking and no analytics.</li>
+          <li>Your food log stays on your phone. I can&rsquo;t see it.</li>
+          <li>When you search for a food or look up a barcode, only the search words or the barcode number are sent to a public food database.</li>
+          <li>Nothing you type into the goal calculator is saved or sent anywhere.</li>
+        </ul>
+      </div>
+
+      <h2>Who makes Daily Log</h2>
+      <p>
+        Daily Log is a free calorie tracker made by Nouri, an independent developer. In this policy, &ldquo;I&rdquo; means
+        the developer and &ldquo;the app&rdquo; means Daily Log.
+      </p>
+
+      <h2>What stays on your phone</h2>
+      <p>The app saves these things in its own storage on your phone:</p>
+      <ul>
+        <li>the foods you log, and the date for each one</li>
+        <li>your saved meals</li>
+        <li>your daily calorie goal</li>
+        <li>your display settings, such as background colour, font and text size</li>
+      </ul>
+      <p>
+        This information is never sent to me or to anyone else. If you uninstall the app, or clear its storage in your
+        phone&rsquo;s settings, it is deleted.
+      </p>
+
+      <h2>Backups</h2>
+      <p>
+        The <strong>Export</strong> button makes a backup file of your log. You choose where it goes, for example Google
+        Drive or an email to yourself. After that, the file is handled by the app or service you chose. The
+        <strong>Import</strong> button only reads a backup file that you pick.
+      </p>
+
+      <h2>Food search</h2>
+      <p>
+        When you search for a food by name, the words you type are sent to
+        <a href="https://fdc.nal.usda.gov/">FoodData Central</a>, a free food database run by the U.S. Department of
+        Agriculture (USDA). Nothing from your food log is sent. Like any website, USDA can see your phone&rsquo;s internet
+        (IP) address when the request arrives. See the <a href="https://www.usda.gov/privacy-policy">USDA privacy policy</a>.
+      </p>
+
+      <h2>Barcode lookups</h2>
+      <p>
+        When you scan or type a barcode, only the barcode number is sent to
+        <a href="https://world.openfoodfacts.org/">Open Food Facts</a>, a free, non-profit product database based in
+        France. Open Food Facts can see your phone&rsquo;s IP address when the request arrives. See the
+        <a href="https://world.openfoodfacts.org/privacy">Open Food Facts privacy policy</a>.
+      </p>
+
+      <h2>The barcode scanner and your camera</h2>
+      <p>
+        The scanner is provided by Google Play services on your phone. It opens the camera and reads the barcode on your
+        phone. Daily Log never receives camera pictures, only the barcode number, and the app does not ask for permission to
+        use your camera. Google may collect limited information about how the scanner works, under the
+        <a href="https://developers.google.com/ml-kit/terms">ML Kit terms</a> and the
+        <a href="https://policies.google.com/privacy">Google privacy policy</a>.
+      </p>
+
+      <h2>The goal calculator</h2>
+      <p>
+        The calculator uses your age, height, weight, sex and activity level to suggest a daily calorie goal. These details
+        are only used on screen while the calculator is open. They are never saved and never sent anywhere. Only the goal
+        you choose to use is saved, on your phone.
+      </p>
+
+      <h2>Sending feedback</h2>
+      <p>
+        If you tap <strong>Send feedback</strong>, a Google Form opens. Whatever you type in the form is sent to me through
+        Google Forms. If you leave the box ticked, the form also includes the app version and your phone&rsquo;s make,
+        model and Android version, to help me fix bugs. You can untick it. Please don&rsquo;t include anything personal that
+        you don&rsquo;t want to share. I only use feedback to improve the app, and I&rsquo;ll delete yours if you ask.
+        Google Forms is covered by the <a href="https://policies.google.com/privacy">Google privacy policy</a>.
+      </p>
+
+      <h2>What I don&rsquo;t do</h2>
+      <ul>
+        <li>I don&rsquo;t show adverts.</li>
+        <li>I don&rsquo;t use analytics or tracking tools.</li>
+        <li>I don&rsquo;t sell or share your information.</li>
+        <li>I don&rsquo;t ask you to create an account.</li>
+      </ul>
+
+      <h2>Where your information goes</h2>
+      <p>
+        USDA is in the United States, Open Food Facts is in France, and Google operates worldwide. Search words, barcode
+        numbers and feedback may be handled in those countries.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        Daily Log is not made for children under 13. The goal calculator is for adults aged 18 and over.
+      </p>
+
+      <h2>Health information</h2>
+      <p>
+        Daily Log gives estimates to help you keep track of what you eat. It is not medical advice. Please speak to a
+        doctor before making big changes to your diet, especially if you are pregnant or have a health condition.
+      </p>
+
+      <h2>Your choices</h2>
+      <ul>
+        <li>To delete everything the app has stored, uninstall it or clear its storage in your phone&rsquo;s settings.</li>
+        <li>To have your feedback deleted, email me at the address below.</li>
+      </ul>
+
+      <h2>Changes to this policy</h2>
+      <p>
+        If this policy changes, I&rsquo;ll update this page and the date at the top. Big changes will also be mentioned in
+        the app&rsquo;s release notes.
+      </p>
+
+      <h2>Contact</h2>
+      <p>Questions about privacy? Email <a href="mailto:CHANGE-ME@example.com">CHANGE-ME@example.com</a>.</p>
+
+      <hr />
+      <p class="date">Daily Log &middot; free, no adverts, no tracking.</p>
+    </main>
+  </body>
+</html>

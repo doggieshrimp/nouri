@@ -10,6 +10,7 @@ A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 - Food search across USDA FoodData Central (generic and branded foods), with label serving sizes
 - Recent foods and saved meals for one-tap logging
 - Display and reading settings for dyslexic readers (following the British Dyslexia Association style guide): tinted or dark backgrounds, Open Sans, Lexend, Atkinson Hyperlegible or OpenDyslexic, larger text, extra spacing, and a no-capitals/no-italics mode; all text colours meet WCAG AA contrast
+- Privacy policy built in, plus an in-app feedback button for testers (Google Forms)
 - Barcode scanning on Android (Google's ML Kit code scanner, no camera permission needed), with product data from Open Food Facts; barcodes can also be typed in
 - Custom food entries
 - Saved on the device (IndexedDB), with day-by-day history
@@ -48,6 +49,16 @@ npm run apk
 This builds the web app, syncs it into the Capacitor Android project, and writes a
 debug APK to `release/DailyLog.apk`. To open the native project in Android Studio,
 run `npx cap open android`.
+
+### Before a public release
+
+- Replace `CHANGE-ME@example.com` in `src/config.ts` and `public/privacy.html` with the
+  contact email. `npm run aab` refuses to build until you do.
+- For tester feedback, paste a pre-filled Google Form link into `FEEDBACK_FORM_URL` in
+  `src/config.ts` (instructions in the file). The app fills in its version and the
+  phone model unless the tester opts out.
+- The privacy policy is `public/privacy.html`. It ships inside the app and is published
+  alongside the web build (e.g. GitHub Pages) for the Play Console's privacy policy link.
 
 ### Google Play releases
 

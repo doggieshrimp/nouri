@@ -21,6 +21,18 @@ if ($Release -and -not (Test-Path "$root\android\keystore.properties")) {
   throw "android\keystore.properties is missing. See android\keystore.properties.example."
 }
 
+if ($Release) {
+  # Don't ship placeholder contact details to Google Play.
+  $placeholders = Select-String -Path "$root\src\config.ts", "$root\public\privacy.html" -Pattern "CHANGE-ME" -SimpleMatch
+  if ($placeholders) {
+    $files = ($placeholders | ForEach-Object { Split-Path $_.Path -Leaf } | Sort-Object -Unique) -join ", "
+    throw "Replace the CHANGE-ME placeholder email in: $files"
+  }
+  if (Select-String -Path "$root\src\config.ts" -Pattern 'FEEDBACK_FORM_URL = "";' -SimpleMatch) {
+    Write-Warning "FEEDBACK_FORM_URL is empty in src\config.ts, so testers won't see a feedback button."
+  }
+}
+
 Push-Location $root
 try {
   npm run android:sync
