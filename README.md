@@ -6,7 +6,8 @@ A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 
 - Daily calorie goal with remaining/over indicator and progress bar
 - Protein, carbs and fat totals
-- Ingredient lookup with per-gram scaling
+- Food search across USDA FoodData Central (generic and branded foods), with label serving sizes
+- Recent foods and saved meals for one-tap logging
 - Custom food entries
 - Saved on the device (IndexedDB), with day-by-day history
 - Backup export and import as JSON
@@ -25,6 +26,11 @@ A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 npm install
 npm run dev
 ```
+
+Food search uses the USDA FoodData Central API. Get a free key at
+https://fdc.nal.usda.gov/api-key-signup, copy `.env.example` to `.env.local`,
+and set `VITE_USDA_API_KEY`. Without it, development falls back to USDA's
+heavily rate-limited `DEMO_KEY`, and production builds disable online search.
 
 Other scripts: `npm test`, `npm run lint`, `npm run build`.
 
@@ -53,6 +59,7 @@ run `npx cap open android`.
 
 - [x] Project setup, TypeScript, tests
 - [x] Save data on the device, with day-by-day history and backup export/import
-- [ ] USDA FoodData Central search, recent foods, saved meals
+- [x] USDA FoodData Central search, recent foods, saved meals
 - [ ] Weight tracking with a trend line, weekly charts
-- [ ] Installable PWA, barcode scanning, deploy
+- [x] Android app (Capacitor), Google Play release setup
+- [ ] Barcode scanning

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { goalPercent, scaleFood, sumMacros, type Food } from "./nutrition";
+import { entryName, goalPercent, scaleFood, sumMacros, type Food } from "./nutrition";
 
 const chicken: Food = { name: "Chicken breast, raw", calories: 165, protein: 31, carbs: 0, fat: 3.6 };
 
@@ -43,5 +43,21 @@ describe("goalPercent", () => {
   it("returns 0 instead of NaN or Infinity when the goal is 0", () => {
     expect(goalPercent(0, 0)).toBe(0);
     expect(goalPercent(500, 0)).toBe(0);
+  });
+});
+
+describe("entryName", () => {
+  const yogurt: Food = { name: "Greek yogurt", brand: "Chobani", calories: 59, protein: 10, carbs: 3.6, fat: 0.4 };
+
+  it("includes the brand and weight", () => {
+    expect(entryName(yogurt, 150)).toBe("Chobani Greek yogurt (150g)");
+  });
+
+  it("doesn't repeat a brand that's already in the name", () => {
+    expect(entryName({ ...yogurt, name: "Chobani Plain Greek Yogurt" }, 180)).toBe("Chobani Plain Greek Yogurt (180g)");
+  });
+
+  it("works without a brand", () => {
+    expect(entryName(chicken, 100)).toBe("Chicken breast, raw (100g)");
   });
 });

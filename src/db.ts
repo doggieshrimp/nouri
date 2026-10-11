@@ -1,9 +1,24 @@
 import Dexie, { type EntityTable } from "dexie";
 import type { DateKey } from "./lib/dates";
-import type { Entry, Macros } from "./lib/nutrition";
+import type { Entry, Food, Macros } from "./lib/nutrition";
 
-export interface LogEntry extends Entry {
+/** What gets logged: fixed macros, plus the source food and weight when it came from a lookup. */
+export interface LogItem extends Macros {
+  name: string;
+  /** Per-100g food this was scaled from. Absent for custom items. */
+  food?: Food;
+  grams?: number;
+}
+
+export interface LogEntry extends Entry, LogItem {
   date: DateKey;
+  createdAt: number;
+}
+
+export interface Meal {
+  id: string;
+  name: string;
+  items: LogItem[];
   createdAt: number;
 }
 
@@ -17,6 +32,7 @@ export const DEFAULT_GOAL = 2000;
 class TrackerDB extends Dexie {
   entries!: EntityTable<LogEntry, "id">;
   settings!: EntityTable<Setting, "key">;
+  meals!: EntityTable<Meal, "id">;
 
   constructor() {
     super("daily-log");
@@ -24,22 +40,58 @@ class TrackerDB extends Dexie {
       entries: "id, date",
       settings: "key",
     });
+    // v2: index entries by createdAt for "recent foods", and add saved meals.
+    this.version(2).stores({
+      entries: "id, date, createdAt",
+      settings: "key",
+      meals: "id, createdAt",
+    });
   }
 }
 
 export const db = new TrackerDB();
 
+// ---- Entries ----
+
 export async function getEntriesForDate(date: DateKey): Promise<LogEntry[]> {
   return db.entries.where("date").equals(date).sortBy("createdAt");
 }
 
-export async function addEntry(date: DateKey, item: { name: string } & Macros): Promise<void> {
+export async function addEntry(date: DateKey, item: LogItem): Promise<void> {
   await db.entries.add({ ...item, id: crypto.randomUUID(), date, createdAt: Date.now() });
 }
 
 export async function deleteEntry(id: string): Promise<void> {
   await db.entries.delete(id);
 }
+
+function itemFrom({ name, calories, protein, carbs, fat, food, grams }: LogItem): LogItem {
+  return food ? { name, calories, protein, carbs, fat, food, grams } : { name, calories, protein, carbs, fat };
+}
+
+function recentKey(item: LogItem): string {
+  if (!item.food) return `custom:${item.name.toLowerCase()}`;
+  return item.food.fdcId !== undefined ? `usda:${item.food.fdcId}` : `food:${item.food.name.toLowerCase()}`;
+}
+
+/** The most recently logged distinct foods, newest first, with the amount last used. */
+export async function getRecentItems(limit = 8): Promise<LogItem[]> {
+  const seen = new Set<string>();
+  const recent: LogItem[] = [];
+  await db.entries
+    .orderBy("createdAt")
+    .reverse()
+    .until(() => recent.length >= limit)
+    .each((entry) => {
+      const key = recentKey(entry);
+      if (seen.has(key)) return;
+      seen.add(key);
+      recent.push(itemFrom(entry));
+    });
+  return recent;
+}
+
+// ---- Goal ----
 
 export async function getGoal(): Promise<number> {
   const row = await db.settings.get("goal");
@@ -50,58 +102,114 @@ export async function setGoal(goal: number): Promise<void> {
   await db.settings.put({ key: "goal", value: goal });
 }
 
+// ---- Meals ----
+
+export async function getMeals(): Promise<Meal[]> {
+  const meals = await db.meals.toArray();
+  return meals.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function saveMeal(name: string, items: LogItem[]): Promise<void> {
+  await db.meals.add({ id: crypto.randomUUID(), name, items: items.map(itemFrom), createdAt: Date.now() });
+}
+
+export async function deleteMeal(id: string): Promise<void> {
+  await db.meals.delete(id);
+}
+
+/** Logs every item in a meal to the given day, keeping the meal's order. */
+export async function addMealToDay(date: DateKey, meal: Meal): Promise<void> {
+  const now = Date.now();
+  await db.entries.bulkAdd(
+    meal.items.map((item, i) => ({ ...item, id: crypto.randomUUID(), date, createdAt: now + i })),
+  );
+}
+
 // ---- Backup ----
 
 export interface Backup {
   app: "daily-log";
-  version: 1;
+  version: 2;
   exportedAt: string;
   goal: number;
   entries: LogEntry[];
+  meals: Meal[];
 }
 
 export async function exportBackup(): Promise<Backup> {
   return {
     app: "daily-log",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     goal: await getGoal(),
     entries: await db.entries.toArray(),
+    meals: await db.meals.toArray(),
   };
 }
 
-function isLogEntry(e: unknown): e is LogEntry {
-  if (typeof e !== "object" || e === null) return false;
-  const r = e as Record<string, unknown>;
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+function isLogItem(v: unknown): v is LogItem {
+  if (!isRecord(v)) return false;
   return (
-    typeof r.id === "string" &&
-    typeof r.name === "string" &&
-    typeof r.date === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(r.date) &&
-    typeof r.createdAt === "number" &&
-    ["calories", "protein", "carbs", "fat"].every((k) => typeof r[k] === "number")
+    typeof v.name === "string" &&
+    ["calories", "protein", "carbs", "fat"].every((k) => typeof v[k] === "number") &&
+    (v.food === undefined || (isRecord(v.food) && typeof v.food.calories === "number"))
   );
 }
 
-/** Throws if the data isn't a valid Daily Log backup. */
+function isLogEntry(v: unknown): v is LogEntry {
+  return (
+    isLogItem(v) &&
+    isRecord(v) &&
+    typeof v.id === "string" &&
+    typeof v.date === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(v.date) &&
+    typeof v.createdAt === "number"
+  );
+}
+
+function isMeal(v: unknown): v is Meal {
+  return (
+    isRecord(v) &&
+    typeof v.id === "string" &&
+    typeof v.name === "string" &&
+    typeof v.createdAt === "number" &&
+    Array.isArray(v.items) &&
+    v.items.every(isLogItem)
+  );
+}
+
+/** Throws if the data isn't a valid Daily Log backup. Accepts v1 backups (no meals). */
 export function parseBackup(data: unknown): Backup {
-  if (typeof data !== "object" || data === null) throw new Error("Not a backup file.");
-  const b = data as Record<string, unknown>;
-  if (b.app !== "daily-log" || b.version !== 1) throw new Error("Not a Daily Log backup file.");
-  if (typeof b.goal !== "number" || !Array.isArray(b.entries) || !b.entries.every(isLogEntry)) {
+  if (!isRecord(data)) throw new Error("Not a backup file.");
+  if (data.app !== "daily-log" || (data.version !== 1 && data.version !== 2)) {
+    throw new Error("Not a Daily Log backup file.");
+  }
+  const meals = data.meals ?? [];
+  if (
+    typeof data.goal !== "number" ||
+    !Array.isArray(data.entries) ||
+    !data.entries.every(isLogEntry) ||
+    !Array.isArray(meals) ||
+    !meals.every(isMeal)
+  ) {
     throw new Error("Backup file is damaged or incomplete.");
   }
-  return data as Backup;
+  return { ...(data as unknown as Backup), version: 2, meals };
 }
 
 /**
- * Merges a backup into the database. Entries with matching ids are overwritten,
+ * Merges a backup into the database. Rows with matching ids are overwritten,
  * so importing the same file twice doesn't create duplicates.
  * Returns the number of entries imported.
  */
 export async function importBackup(backup: Backup): Promise<number> {
-  await db.transaction("rw", db.entries, db.settings, async () => {
+  await db.transaction("rw", db.entries, db.settings, db.meals, async () => {
     await db.entries.bulkPut(backup.entries);
+    await db.meals.bulkPut(backup.meals);
     await setGoal(backup.goal);
   });
   return backup.entries.length;

@@ -8,6 +8,11 @@ export interface Macros {
 /** A food's nutrition values per 100g. */
 export interface Food extends Macros {
   name: string;
+  brand?: string;
+  /** USDA FoodData Central id, for foods from the online database. */
+  fdcId?: number;
+  /** Typical serving from the label, e.g. { grams: 150, label: "1 container" }. */
+  serving?: { grams: number; label: string };
 }
 
 export interface Entry extends Macros {
@@ -55,4 +60,10 @@ export function sumMacros(items: Macros[]): Macros {
 export function goalPercent(calories: number, goal: number): number {
   if (goal <= 0) return 0;
   return Math.max(0, Math.min(100, Math.round((calories / goal) * 100)));
+}
+
+/** Log entry name for an amount of a food, e.g. "Chobani Greek yogurt (150g)". */
+export function entryName(food: Food, grams: number): string {
+  const hasBrand = food.brand && !food.name.toLowerCase().includes(food.brand.toLowerCase());
+  return `${hasBrand ? `${food.brand} ` : ""}${food.name} (${grams}g)`;
 }

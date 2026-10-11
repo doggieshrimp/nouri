@@ -3,8 +3,8 @@ import { Download, Upload } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-import { exportBackup, importBackup, parseBackup } from "./db";
-import { todayKey } from "./lib/dates";
+import { exportBackup, importBackup, parseBackup } from "../db";
+import { todayKey } from "../lib/dates";
 
 export default function BackupControls() {
   const fileInput = useRef<HTMLInputElement>(null);
