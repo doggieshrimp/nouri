@@ -33,7 +33,7 @@ export default function CustomFoodForm({ initialName = "", onAdd, onCancel }: Pr
         <span className="text-xs font-bold uppercase tracking-wide" style={{ color: GOLD }}>
           Custom item
         </span>
-        <button type="button" onClick={onCancel} className="opacity-50 hover:opacity-100" aria-label="Close custom item">
+        <button type="button" onClick={onCancel} className="opacity-70 hover:opacity-100" aria-label="Close custom item">
           <X size={16} />
         </button>
       </div>

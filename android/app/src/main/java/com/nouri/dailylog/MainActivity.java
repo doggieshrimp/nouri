@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(AppThemePlugin.class);
         super.onCreate(savedInstanceState);
 
         // Keep the web content clear of the status bar, navigation bar, notches and the

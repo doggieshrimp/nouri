@@ -31,9 +31,9 @@ export default function FoodEditor({ food, initialGrams, onAdd, onCancel }: Prop
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
           <div className="text-sm font-bold">{food.name}</div>
-          {food.brand && <div className="text-xs opacity-60">{food.brand}</div>}
+          {food.brand && <div className="text-xs opacity-70">{food.brand}</div>}
         </div>
-        <button type="button" onClick={onCancel} className="opacity-50 hover:opacity-100 p-1 -m-1" aria-label="Clear selection">
+        <button type="button" onClick={onCancel} className="opacity-70 hover:opacity-100 p-1 -m-1" aria-label="Clear selection">
           <X size={16} />
         </button>
       </div>
@@ -72,7 +72,7 @@ export default function FoodEditor({ food, initialGrams, onAdd, onCancel }: Prop
           { label: "Fat", value: `${preview.fat}g` },
         ].map((m) => (
           <div key={m.label}>
-            <div className="text-xs opacity-60">{m.label}</div>
+            <div className="text-xs opacity-70">{m.label}</div>
             <div className="font-mono font-bold">{m.value}</div>
           </div>
         ))}

@@ -9,6 +9,7 @@ A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 - Protein, carbs and fat totals
 - Food search across USDA FoodData Central (generic and branded foods), with label serving sizes
 - Recent foods and saved meals for one-tap logging
+- Display and reading settings for dyslexic readers (following the British Dyslexia Association style guide): tinted or dark backgrounds, Open Sans, Lexend, Atkinson Hyperlegible or OpenDyslexic, larger text, extra spacing, and a no-capitals/no-italics mode; all text colours meet WCAG AA contrast
 - Barcode scanning on Android (Google's ML Kit code scanner, no camera permission needed), with product data from Open Food Facts; barcodes can also be typed in
 - Custom food entries
 - Saved on the device (IndexedDB), with day-by-day history

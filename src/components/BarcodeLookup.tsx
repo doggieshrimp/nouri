@@ -42,7 +42,7 @@ export function BarcodeResult({ code, onFound, onAddCustom, onClose }: ResultPro
     <div className="border-2 p-3 mt-2 text-sm" style={{ borderColor: INK }} role="status">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-xs font-mono opacity-60 mb-1">Barcode {code}</div>
+          <div className="text-xs font-mono opacity-70 mb-1">Barcode {code}</div>
           {state.status === "loading" && (
             <div className="flex items-center gap-2 opacity-70">
               <Loader2 size={14} className="animate-spin" /> Looking up product…
@@ -56,7 +56,7 @@ export function BarcodeResult({ code, onFound, onAddCustom, onClose }: ResultPro
           )}
           {state.status === "error" && <div style={{ color: ALERT }}>{state.message}</div>}
         </div>
-        <button type="button" onClick={onClose} className="opacity-50 hover:opacity-100 p-1 -m-1" aria-label="Close barcode result">
+        <button type="button" onClick={onClose} className="opacity-70 hover:opacity-100 p-1 -m-1" aria-label="Close barcode result">
           <X size={16} />
         </button>
       </div>
@@ -108,7 +108,7 @@ export function BarcodeEntry({ onSubmit, onClose }: EntryProps) {
       >
         Look up
       </button>
-      <button type="button" onClick={onClose} className="opacity-50 hover:opacity-100 px-1" aria-label="Close barcode entry">
+      <button type="button" onClick={onClose} className="opacity-70 hover:opacity-100 px-1" aria-label="Close barcode entry">
         <X size={16} />
       </button>
     </form>

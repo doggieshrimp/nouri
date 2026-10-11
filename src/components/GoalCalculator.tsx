@@ -12,40 +12,11 @@ import {
   type Sex,
 } from "../lib/calorieGoal";
 import { ALERT, GOLD, INK, PAPER, RULE } from "../theme";
+import Segmented from "./Segmented";
 
 interface Props {
   onUse: (goal: number) => void;
   onClose: () => void;
-}
-
-function Segmented<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div role="radiogroup" aria-label={label} className="flex border-2" style={{ borderColor: INK }}>
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          role="radio"
-          aria-checked={value === o.value}
-          onClick={() => onChange(o.value)}
-          className="flex-1 py-1.5 px-1 text-xs font-bold uppercase tracking-wide"
-          style={{ background: value === o.value ? INK : "transparent", color: value === o.value ? PAPER : INK }}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function Field({ label, children, grow }: { label: string; children: ReactNode; grow?: boolean }) {
@@ -69,7 +40,7 @@ function NumberInput({ value, onChange, unit, label }: { value: string; onChange
         className="w-full min-w-0 px-2 py-2 border-2 bg-transparent outline-none text-sm font-mono"
         style={{ borderColor: INK }}
       />
-      <span className="text-xs opacity-60 shrink-0">{unit}</span>
+      <span className="text-xs opacity-70 shrink-0">{unit}</span>
     </label>
   );
 }
@@ -104,7 +75,7 @@ export default function GoalCalculator({ onUse, onClose }: Props) {
         <span className="text-xs font-bold uppercase tracking-wide" style={{ color: GOLD }}>
           Calculate a daily goal
         </span>
-        <button type="button" onClick={onClose} className="opacity-50 hover:opacity-100 p-1 -m-1" aria-label="Close calculator">
+        <button type="button" onClick={onClose} className="opacity-70 hover:opacity-100 p-1 -m-1" aria-label="Close calculator">
           <X size={16} />
         </button>
       </div>
@@ -177,7 +148,7 @@ export default function GoalCalculator({ onUse, onClose }: Props) {
               />
               <span>
                 <span className="font-medium">{a.label}</span>
-                <span className="block text-xs opacity-60">{a.detail}</span>
+                <span className="block text-xs opacity-70">{a.detail}</span>
               </span>
             </label>
           ))}
@@ -208,7 +179,7 @@ export default function GoalCalculator({ onUse, onClose }: Props) {
             <span className="text-xs uppercase tracking-wide font-bold">Suggested goal</span>
             <span className="text-3xl font-black font-mono tabular-nums">{suggestion.goal}</span>
           </div>
-          <div className="text-xs opacity-60 mt-1">
+          <div className="text-xs opacity-70 mt-1">
             About {suggestion.maintenance} kcal/day maintains your weight ({suggestion.bmr} at rest).
           </div>
           {suggestion.raisedToFloor && (
@@ -229,7 +200,7 @@ export default function GoalCalculator({ onUse, onClose }: Props) {
       >
         {suggestion ? `Use ${suggestion.goal} as my goal` : "Fill in your details"}
       </button>
-      <p className="text-xs opacity-50 mt-2">
+      <p className="text-xs opacity-70 mt-2">
         Estimate from the Mifflin-St Jeor equation, not medical advice. Nothing you enter here is saved, only the goal
         you choose.
       </p>

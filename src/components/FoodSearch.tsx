@@ -24,7 +24,7 @@ const NO_MEALS: Meal[] = [];
 
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
-    <div className="text-[10px] font-bold uppercase tracking-widest opacity-50 px-3 pt-3 pb-1">{children}</div>
+    <div className="text-[0.6875rem] font-bold uppercase tracking-widest opacity-70 px-3 pt-3 pb-1">{children}</div>
   );
 }
 
@@ -38,9 +38,9 @@ function Row({ title, subtitle, right, onClick }: { title: string; subtitle?: st
       >
         <span className="min-w-0">
           <span className="block truncate">{title}</span>
-          {subtitle && <span className="block text-xs opacity-60 truncate">{subtitle}</span>}
+          {subtitle && <span className="block text-xs opacity-70 truncate">{subtitle}</span>}
         </span>
-        <span className="text-xs font-mono opacity-60 shrink-0">{right}</span>
+        <span className="text-xs font-mono opacity-70 shrink-0">{right}</span>
       </button>
     </li>
   );
@@ -174,21 +174,21 @@ export default function FoodSearch({ date }: { date: DateKey }) {
       <Heading />
       <div className="flex gap-2">
       <div className="flex-1 min-w-0 flex items-center gap-2 border-2 px-2" style={{ borderColor: INK }}>
-        <Search size={16} className="opacity-60 shrink-0" />
+        <Search size={16} className="opacity-70 shrink-0" />
         <input
           // Plain text with a search keyboard key: type="search" adds a second, native clear button.
           type="text"
           enterKeyHint="search"
           autoComplete="off"
-          placeholder="Search foods, e.g. greek yogurt"
+          placeholder="Search foods"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="flex-1 min-w-0 py-2 bg-transparent outline-none text-sm"
           aria-label="Search foods"
         />
-        {usdaLoading && <Loader2 size={16} className="animate-spin opacity-60 shrink-0" aria-label="Searching" />}
+        {usdaLoading && <Loader2 size={16} className="animate-spin opacity-70 shrink-0" aria-label="Searching" />}
         {query && (
-          <button type="button" onClick={() => setQuery("")} className="opacity-50 p-1" aria-label="Clear search">
+          <button type="button" onClick={() => setQuery("")} className="opacity-70 p-1" aria-label="Clear search">
             <X size={16} />
           </button>
         )}
@@ -267,9 +267,9 @@ export default function FoodSearch({ date }: { date: DateKey }) {
             </>
           )}
           {usdaCurrent && usda.error && <div className="px-3 py-2 text-xs" style={{ color: ALERT }}>{usda.error}</div>}
-          {usdaLoading && !hasTypedResults && <div className="px-3 py-2 text-xs opacity-60 italic">Searching…</div>}
+          {usdaLoading && !hasTypedResults && <div className="px-3 py-2 text-xs opacity-70 italic">Searching…</div>}
           {!usdaLoading && !hasTypedResults && !usda.error && (
-            <div className="px-3 py-2 text-xs opacity-60 italic">No matches.</div>
+            <div className="px-3 py-2 text-xs opacity-70 italic">No matches.</div>
           )}
           <div className="px-3 py-2" style={{ borderTop: `1px solid ${RULE}` }}>
             <button type="button" className="text-xs underline opacity-70" onClick={() => openCustom(trimmed)}>
@@ -295,9 +295,9 @@ export default function FoodSearch({ date }: { date: DateKey }) {
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-medium">{m.name}</span>
-                        <span className="block text-xs opacity-60">{m.items.length} items</span>
+                        <span className="block text-xs opacity-70">{m.items.length} items</span>
                       </span>
-                      <span className="text-xs font-mono opacity-60 shrink-0">{sumMacros(m.items).calories} kcal</span>
+                      <span className="text-xs font-mono opacity-70 shrink-0">{sumMacros(m.items).calories} kcal</span>
                     </button>
                     <button
                       type="button"

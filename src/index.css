@@ -1,4 +1,21 @@
 @import "tailwindcss";
+@import "@fontsource-variable/open-sans";
+@import "@fontsource-variable/lexend";
+@import "@fontsource-variable/atkinson-hyperlegible-next";
+@import "@fontsource/opendyslexic/400.css";
+@import "@fontsource/opendyslexic/700.css";
+
+/* Defaults; lib/appearance.ts overrides these with the reader's chosen theme. */
+:root {
+  --paper: #faf8f3;
+  --ink: #1a1a1a;
+  --gold: #7a5c2e;
+  --alert: #a8380a;
+  --good: #3b6a40;
+  --rule: #ddd6c4;
+  --track: #e7e2d6;
+  --font-body: "Open Sans Variable", ui-sans-serif, system-ui, sans-serif;
+}
 
 html,
 body,
@@ -8,7 +25,8 @@ body,
 
 body {
   margin: 0;
-  background: #faf8f3;
+  background: var(--paper);
+  color: var(--ink);
   /* Keep content clear of notches and system bars in browsers and on iOS.
      The Android app pads natively in MainActivity, so these resolve to 0 there. */
   padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
@@ -16,4 +34,42 @@ body {
   padding-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
   padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Form controls don't inherit fonts by default. */
+input,
+select,
+button {
+  font-family: inherit;
+}
+
+select option {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* ---- Reading-comfort modes (see lib/appearance.ts) ---- */
+
+/* OpenDyslexic is already widely spaced; the design's extra tracking on labels makes it too loose. */
+[data-font="opendyslexic"] .tracking-tight,
+[data-font="opendyslexic"] .tracking-wide,
+[data-font="opendyslexic"] .tracking-widest {
+  letter-spacing: normal;
+}
+
+/* Extra letter, word and line spacing (BDA guidance: ~0.12em letters, ~0.16em words, 1.5+ lines). */
+.extra-spacing body {
+  line-height: 1.7;
+}
+.extra-spacing body * {
+  letter-spacing: 0.08em !important;
+  word-spacing: 0.16em;
+}
+
+/* No ALL CAPS or italics, which are harder to read for many dyslexic readers. */
+.plain-text .uppercase {
+  text-transform: none !important;
+}
+.plain-text .italic {
+  font-style: normal !important;
 }

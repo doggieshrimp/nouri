@@ -28,7 +28,7 @@ export default function EntryList({ entries, isToday }: Props) {
       {saving && <SaveMealPanel entries={entries} onDone={() => setSaving(false)} />}
 
       {entries.length === 0 && (
-        <div className="text-sm opacity-60 italic py-4 text-center">
+        <div className="text-sm opacity-70 italic py-4 text-center">
           {isToday ? "Nothing logged yet. Add your first item above." : "Nothing logged this day."}
         </div>
       )}
@@ -37,13 +37,13 @@ export default function EntryList({ entries, isToday }: Props) {
           <li key={e.id} className="flex items-center justify-between gap-3 py-2" style={{ borderBottom: `1px solid ${RULE}` }}>
             <div className="min-w-0">
               <div className="text-sm font-medium">{e.name}</div>
-              <div className="text-xs font-mono opacity-60">
+              <div className="text-xs font-mono opacity-70">
                 P{e.protein} · C{e.carbs} · F{e.fat}
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <span className="font-mono font-bold text-sm">{e.calories}</span>
-              <button onClick={() => deleteEntry(e.id)} aria-label={`Remove ${e.name}`} className="opacity-50 hover:opacity-100 p-1">
+              <button onClick={() => deleteEntry(e.id)} aria-label={`Remove ${e.name}`} className="opacity-70 hover:opacity-100 p-1">
                 <Trash2 size={16} />
               </button>
             </div>
@@ -91,7 +91,7 @@ function SaveMealPanel({ entries, onDone }: { entries: LogEntry[]; onDone: () =>
             <label className="flex items-center gap-2 py-1 text-sm">
               <input type="checkbox" checked={picked.has(e.id)} onChange={() => toggle(e.id)} className="accent-black" />
               <span className="flex-1 min-w-0 truncate">{e.name}</span>
-              <span className="text-xs font-mono opacity-60">{e.calories}</span>
+              <span className="text-xs font-mono opacity-70">{e.calories}</span>
             </label>
           </li>
         ))}

@@ -5,6 +5,7 @@ import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { exportBackup, importBackup, parseBackup } from "../db";
 import { todayKey } from "../lib/dates";
+import { RULE } from "../theme";
 
 export default function BackupControls() {
   const fileInput = useRef<HTMLInputElement>(null);
@@ -54,7 +55,7 @@ export default function BackupControls() {
   }
 
   return (
-    <div className="mt-10 pt-3 text-xs" style={{ borderTop: "1px solid #DDD6C4" }}>
+    <div className="mt-10 pt-3 text-xs" style={{ borderTop: `1px solid ${RULE}` }}>
       <div className="flex items-center gap-4 opacity-70">
         <span className="uppercase tracking-wide font-bold">Backup</span>
         <button type="button" onClick={handleExport} className="flex items-center gap-1 underline">
@@ -80,7 +81,7 @@ export default function BackupControls() {
           {message}
         </div>
       )}
-      <p className="mt-2 opacity-50">
+      <p className="mt-2 opacity-70">
         Your log is stored only on this device. Export a backup now and then so you don&rsquo;t lose it.
       </p>
     </div>

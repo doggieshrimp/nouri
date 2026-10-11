@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Calculator, ChevronLeft, ChevronRight, Flame } from "lucide-react";
+import { Calculator, ChevronLeft, ChevronRight, Flame, Type } from "lucide-react";
 import BackupControls from "./components/BackupControls";
+import DisplaySettings from "./components/DisplaySettings";
 import EntryList from "./components/EntryList";
 import FoodSearch from "./components/FoodSearch";
 import GoalCalculator from "./components/GoalCalculator";
@@ -27,6 +28,7 @@ export default function CalorieTracker() {
 
   const [goalDraft, setGoalDraft] = useState<string | null>(null);
   const [showCalculator, setShowCalculator] = useState(false);
+  const [showDisplay, setShowDisplay] = useState(false);
 
   const totals = useMemo(() => sumMacros(entries), [entries]);
   const remaining = goal - totals.calories;
@@ -41,28 +43,39 @@ export default function CalorieTracker() {
   return (
     <div
       className="min-h-full w-full flex items-start justify-center p-4 sm:p-8"
-      style={{ background: PAPER, color: INK, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}
+      style={{ background: PAPER, color: INK, fontFamily: "var(--font-body)" }}
     >
       <div className="w-full max-w-md">
         {/* Masthead */}
         <div className="flex items-baseline justify-between mb-1">
           <h1 className="text-2xl font-black tracking-tight uppercase">Daily Log</h1>
-          {!isToday && (
+          <div className="flex items-center gap-4">
+            {!isToday && (
+              <button
+                type="button"
+                onClick={() => setDate(todayKey())}
+                className="text-xs font-bold uppercase tracking-wide underline"
+              >
+                Back to today
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setDate(todayKey())}
-              className="text-xs font-bold uppercase tracking-wide underline"
+              onClick={() => setShowDisplay((v) => !v)}
+              className="opacity-70 hover:opacity-100 p-1 -m-1 self-center"
+              aria-label="Display and reading settings"
+              aria-expanded={showDisplay}
             >
-              Back to today
+              <Type size={20} />
             </button>
-          )}
+          </div>
         </div>
         <div className="flex items-center justify-between mb-1">
           <button
             type="button"
             onClick={() => setDate((d) => addDays(d, -1))}
             aria-label="Previous day"
-            className="opacity-60 hover:opacity-100 p-1 -ml-1"
+            className="opacity-70 hover:opacity-100 p-1 -ml-1"
           >
             <ChevronLeft size={18} />
           </button>
@@ -75,12 +88,14 @@ export default function CalorieTracker() {
             onClick={() => setDate((d) => addDays(d, 1))}
             aria-label="Next day"
             disabled={isToday}
-            className="opacity-60 hover:opacity-100 disabled:opacity-20 p-1 -mr-1"
+            className="opacity-70 hover:opacity-100 disabled:opacity-20 p-1 -mr-1"
           >
             <ChevronRight size={18} />
           </button>
         </div>
         <div style={{ height: 6, background: INK }} />
+
+        {showDisplay && <DisplaySettings onClose={() => setShowDisplay(false)} />}
 
         {/* Nutrition-facts-style summary panel */}
         <div className="mt-3 border-2 px-4 pt-3 pb-4" style={{ borderColor: INK }}>
@@ -100,7 +115,7 @@ export default function CalorieTracker() {
               <button
                 type="button"
                 onClick={() => setShowCalculator((v) => !v)}
-                className="opacity-60 hover:opacity-100 p-1 -m-1"
+                className="opacity-70 hover:opacity-100 p-1 -m-1"
                 aria-label="Calculate a suggested goal"
                 aria-expanded={showCalculator}
               >
