@@ -5,6 +5,7 @@ A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 ## Features
 
 - Daily calorie goal with remaining/over indicator and progress bar
+- Goal calculator (Mifflin-St Jeor) from height, weight, age, sex and activity, with a safe minimum; the inputs are never stored, only the chosen goal
 - Protein, carbs and fat totals
 - Food search across USDA FoodData Central (generic and branded foods), with label serving sizes
 - Recent foods and saved meals for one-tap logging

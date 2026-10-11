@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronLeft, ChevronRight, Flame } from "lucide-react";
+import { Calculator, ChevronLeft, ChevronRight, Flame } from "lucide-react";
 import BackupControls from "./components/BackupControls";
 import EntryList from "./components/EntryList";
 import FoodSearch from "./components/FoodSearch";
+import GoalCalculator from "./components/GoalCalculator";
 import { DEFAULT_GOAL, getEntriesForDate, getGoal, setGoal, type LogEntry } from "./db";
 import { addDays, formatDateKey, todayKey, type DateKey } from "./lib/dates";
 import { goalPercent, sumMacros } from "./lib/nutrition";
@@ -25,6 +26,7 @@ export default function CalorieTracker() {
   const entries = dayResult?.date === date ? dayResult.entries : NO_ENTRIES;
 
   const [goalDraft, setGoalDraft] = useState<string | null>(null);
+  const [showCalculator, setShowCalculator] = useState(false);
 
   const totals = useMemo(() => sumMacros(entries), [entries]);
   const remaining = goal - totals.calories;
@@ -88,12 +90,23 @@ export default function CalorieTracker() {
           </div>
 
           <div className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid ${INK}` }}>
-            <button
-              className="text-xs uppercase tracking-wide font-bold underline decoration-dotted"
-              onClick={() => setGoalDraft((v) => (v === null ? String(goal) : v))}
-            >
-              Daily goal
-            </button>
+            <span className="flex items-center gap-2">
+              <button
+                className="text-xs uppercase tracking-wide font-bold underline decoration-dotted"
+                onClick={() => setGoalDraft((v) => (v === null ? String(goal) : v))}
+              >
+                Daily goal
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCalculator((v) => !v)}
+                className="opacity-60 hover:opacity-100 p-1 -m-1"
+                aria-label="Calculate a suggested goal"
+                aria-expanded={showCalculator}
+              >
+                <Calculator size={14} />
+              </button>
+            </span>
             {goalDraft !== null ? (
               <input
                 autoFocus
@@ -141,6 +154,16 @@ export default function CalorieTracker() {
             ))}
           </div>
         </div>
+
+        {showCalculator && (
+          <GoalCalculator
+            onUse={(suggested) => {
+              void setGoal(suggested);
+              setShowCalculator(false);
+            }}
+            onClose={() => setShowCalculator(false)}
+          />
+        )}
 
         <FoodSearch date={date} />
         <EntryList entries={entries} isToday={isToday} />
