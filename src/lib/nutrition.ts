@@ -11,6 +11,8 @@ export interface Food extends Macros {
   brand?: string;
   /** USDA FoodData Central id, for foods from the online database. */
   fdcId?: number;
+  /** Retail barcode, for foods found by scanning. */
+  barcode?: string;
   /** Typical serving from the label, e.g. { grams: 150, label: "1 container" }. */
   serving?: { grams: number; label: string };
 }

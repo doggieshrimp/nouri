@@ -71,7 +71,9 @@ function itemFrom({ name, calories, protein, carbs, fat, food, grams }: LogItem)
 
 function recentKey(item: LogItem): string {
   if (!item.food) return `custom:${item.name.toLowerCase()}`;
-  return item.food.fdcId !== undefined ? `usda:${item.food.fdcId}` : `food:${item.food.name.toLowerCase()}`;
+  if (item.food.fdcId !== undefined) return `usda:${item.food.fdcId}`;
+  if (item.food.barcode) return `barcode:${item.food.barcode}`;
+  return `food:${item.food.name.toLowerCase()}`;
 }
 
 /** The most recently logged distinct foods, newest first, with the amount last used. */

@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, ScanBarcode, Search, X } from "lucide-react";
 import { FOOD_DB } from "../data/foods";
 import { addEntry, addMealToDay, deleteMeal, getMeals, getRecentItems, type LogItem, type Meal } from "../db";
 import type { DateKey } from "../lib/dates";
 import { entryName, scaleFood, sumMacros, type Food } from "../lib/nutrition";
+import { canScan, scanBarcode } from "../lib/scanner";
 import { searchUsda, UsdaError } from "../lib/usda";
 import { useDebounced } from "../lib/useDebounced";
 import { ALERT, GOLD, INK, PAPER, RULE } from "../theme";
+import { BarcodeEntry, BarcodeResult } from "./BarcodeLookup";
 import CustomFoodForm from "./CustomFoodForm";
 import FoodEditor from "./FoodEditor";
 
@@ -48,7 +50,10 @@ export default function FoodSearch({ date }: { date: DateKey }) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<{ food: Food; grams?: number } | null>(null);
   const [showCustom, setShowCustom] = useState(false);
+  const [customName, setCustomName] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [barcode, setBarcode] = useState<string | null>(null);
+  const [typingBarcode, setTypingBarcode] = useState(false);
 
   const recent = useLiveQuery(() => getRecentItems(8)) ?? NO_ITEMS;
   const meals = useLiveQuery(getMeals) ?? NO_MEALS;
@@ -93,6 +98,31 @@ export default function FoodSearch({ date }: { date: DateKey }) {
     setQuery("");
     setSelected(null);
     setShowCustom(false);
+    setCustomName("");
+    setBarcode(null);
+    setTypingBarcode(false);
+  }
+
+  function openCustom(name: string) {
+    setCustomName(name);
+    setShowCustom(true);
+    setBarcode(null);
+  }
+
+  async function startScan() {
+    if (!canScan) {
+      setTypingBarcode(true);
+      return;
+    }
+    try {
+      const code = await scanBarcode(flash);
+      if (code) {
+        setTypingBarcode(false);
+        setBarcode(code);
+      }
+    } catch (err) {
+      flash((err as Error).message || "The barcode scanner couldn't start.");
+    }
   }
 
   async function addFood(food: Food, grams: number) {
@@ -127,7 +157,7 @@ export default function FoodSearch({ date }: { date: DateKey }) {
       <div className="mt-6">
         <Heading />
         <FoodEditor
-          key={selected.food.fdcId ?? selected.food.name}
+          key={selected.food.fdcId ?? selected.food.barcode ?? selected.food.name}
           food={selected.food}
           initialGrams={selected.grams}
           onAdd={(grams) => addFood(selected.food, grams)}
@@ -142,7 +172,8 @@ export default function FoodSearch({ date }: { date: DateKey }) {
   return (
     <div className="mt-6">
       <Heading />
-      <div className="flex items-center gap-2 border-2 px-2" style={{ borderColor: INK }}>
+      <div className="flex gap-2">
+      <div className="flex-1 min-w-0 flex items-center gap-2 border-2 px-2" style={{ borderColor: INK }}>
         <Search size={16} className="opacity-60 shrink-0" />
         <input
           // Plain text with a search keyboard key: type="search" adds a second, native clear button.
@@ -162,6 +193,33 @@ export default function FoodSearch({ date }: { date: DateKey }) {
           </button>
         )}
       </div>
+        <button
+          type="button"
+          onClick={startScan}
+          className="shrink-0 px-3 flex items-center justify-center"
+          style={{ background: INK, color: PAPER }}
+          aria-label={canScan ? "Scan a barcode" : "Enter a barcode"}
+        >
+          <ScanBarcode size={20} />
+        </button>
+      </div>
+
+      {typingBarcode && !barcode && (
+        <BarcodeEntry onSubmit={(code) => setBarcode(code)} onClose={() => setTypingBarcode(false)} />
+      )}
+      {barcode && (
+        <BarcodeResult
+          key={barcode}
+          code={barcode}
+          onFound={(food) => {
+            setBarcode(null);
+            setTypingBarcode(false);
+            setSelected({ food });
+          }}
+          onAddCustom={openCustom}
+          onClose={() => setBarcode(null)}
+        />
+      )}
 
       {status && (
         <div role="status" className="text-xs mt-2 opacity-70">
@@ -214,7 +272,7 @@ export default function FoodSearch({ date }: { date: DateKey }) {
             <div className="px-3 py-2 text-xs opacity-60 italic">No matches.</div>
           )}
           <div className="px-3 py-2" style={{ borderTop: `1px solid ${RULE}` }}>
-            <button type="button" className="text-xs underline opacity-70" onClick={() => setShowCustom(true)}>
+            <button type="button" className="text-xs underline opacity-70" onClick={() => openCustom(trimmed)}>
               Can&rsquo;t find it? Add &ldquo;{trimmed}&rdquo; as a custom item
             </button>
           </div>
@@ -264,15 +322,22 @@ export default function FoodSearch({ date }: { date: DateKey }) {
               </ul>
             </div>
           )}
-          <button type="button" onClick={() => setShowCustom(true)} className="text-xs underline opacity-70 mt-3">
-            Add a custom item
-          </button>
+          <div className="flex gap-4 mt-3">
+            <button type="button" onClick={() => openCustom("")} className="text-xs underline opacity-70">
+              Add a custom item
+            </button>
+            {canScan && (
+              <button type="button" onClick={() => setTypingBarcode(true)} className="text-xs underline opacity-70">
+                Type a barcode
+              </button>
+            )}
+          </div>
         </>
       )}
 
       {showCustom && (
         <CustomFoodForm
-          initialName={trimmed}
+          initialName={customName}
           onAdd={(item) => addItem(item)}
           onCancel={() => setShowCustom(false)}
         />

@@ -8,6 +8,7 @@ A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 - Protein, carbs and fat totals
 - Food search across USDA FoodData Central (generic and branded foods), with label serving sizes
 - Recent foods and saved meals for one-tap logging
+- Barcode scanning on Android (Google's ML Kit code scanner, no camera permission needed), with product data from Open Food Facts; barcodes can also be typed in
 - Custom food entries
 - Saved on the device (IndexedDB), with day-by-day history
 - Backup export and import as JSON
@@ -60,6 +61,6 @@ run `npx cap open android`.
 - [x] Project setup, TypeScript, tests
 - [x] Save data on the device, with day-by-day history and backup export/import
 - [x] USDA FoodData Central search, recent foods, saved meals
-- [ ] Weight tracking with a trend line, weekly charts
 - [x] Android app (Capacitor), Google Play release setup
-- [ ] Barcode scanning
+- [x] Barcode scanning
+- [ ] Weight tracking with a trend line, weekly charts

@@ -27,6 +27,9 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+        <!-- Pre-download Google's barcode scanner UI (used by @capacitor-mlkit/barcode-scanning).
+             It needs no camera permission, so none is requested. -->
+        <meta-data android:name="com.google.mlkit.vision.DEPENDENCIES" android:value="barcode_ui"/>
     </application>
 
     <!-- Permissions -->
