@@ -1,5 +1,7 @@
 # Nouri
 
+**[Try the web version](https://doggieshrimp.github.io/nouri/)** · [Privacy policy](https://doggieshrimp.github.io/nouri/privacy.html)
+
 A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 
 ## Features

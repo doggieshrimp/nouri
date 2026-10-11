@@ -11,4 +11,5 @@ export const CONTACT_EMAIL = "johngoblinsupport@gmail.com";
  * The app swaps those two words for the real values (or blanks if the tester opts out).
  * Leave empty to hide the feedback button.
  */
-export const FEEDBACK_FORM_URL = "";
+export const FEEDBACK_FORM_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSdROSWJQXvLHd5JqopEjJe_OmHaRi69JQ2fiRyVtn1cqwM6Hg/viewform?usp=pp_url&entry.1116889758=APP_VERSION&entry.871895349=DEVICE_INFO";
