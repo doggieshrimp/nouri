@@ -1,6 +1,6 @@
 # Builds the web app, syncs it into the Android project, and produces:
-#   npm run apk  -> release\DailyLog.apk           (debug build, for sideloading/testing)
-#   npm run aab  -> release\DailyLog-<version>.aab (signed release bundle, for Google Play)
+#   npm run apk  -> release\Nouri.apk           (debug build, for sideloading/testing)
+#   npm run aab  -> release\Nouri-<version>.aab (signed release bundle, for Google Play)
 param([switch]$Release)
 $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
@@ -48,10 +48,10 @@ try {
   New-Item -ItemType Directory -Force release | Out-Null
   if ($Release) {
     $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
-    $out = "release\DailyLog-$version.aab"
+    $out = "release\Nouri-$version.aab"
     Copy-Item android\app\build\outputs\bundle\release\app-release.aab $out -Force
   } else {
-    $out = "release\DailyLog.apk"
+    $out = "release\Nouri.apk"
     Copy-Item android\app\build\outputs\apk\debug\app-debug.apk $out -Force
   }
   Write-Host "Ready: $root\$out"

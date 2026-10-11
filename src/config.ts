@@ -2,7 +2,7 @@
 // `npm run aab` refuses to build a release while either still has its placeholder.
 
 /** Contact address shown in the privacy policy (public/privacy.html uses the same one). */
-export const CONTACT_EMAIL = "CHANGE-ME@example.com";
+export const CONTACT_EMAIL = "johngoblinsupport@gmail.com";
 
 /**
  * Google Form for tester feedback, as a pre-filled link.

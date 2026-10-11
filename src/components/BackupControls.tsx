@@ -14,7 +14,7 @@ export default function BackupControls() {
   async function handleExport() {
     const backup = await exportBackup();
     const json = JSON.stringify(backup, null, 2);
-    const filename = `daily-log-backup-${todayKey()}.json`;
+    const filename = `nouri-backup-${todayKey()}.json`;
     try {
       if (Capacitor.isNativePlatform()) {
         // Browser-style downloads don't work inside the Android app, so write the
@@ -25,7 +25,7 @@ export default function BackupControls() {
           directory: Directory.Cache,
           encoding: Encoding.UTF8,
         });
-        await Share.share({ title: "Daily Log backup", files: [uri] });
+        await Share.share({ title: "Nouri backup", files: [uri] });
       } else {
         const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
         const a = document.createElement("a");

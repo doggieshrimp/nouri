@@ -27,7 +27,7 @@ export default function AboutFooter() {
             Early version
           </div>
           <p className="opacity-70 mb-2">
-            Thanks for testing Daily Log. Tell me what&rsquo;s confusing, broken or missing. It only takes a minute.
+            Thanks for testing Nouri. Tell me what&rsquo;s confusing, broken or missing. It only takes a minute.
           </p>
           <label className="flex items-center gap-2 mb-2 cursor-pointer">
             <input

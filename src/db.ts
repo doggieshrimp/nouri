@@ -184,11 +184,11 @@ function isMeal(v: unknown): v is Meal {
   );
 }
 
-/** Throws if the data isn't a valid Daily Log backup. Accepts v1 backups (no meals). */
+/** Throws if the data isn't a valid Nouri backup. Accepts v1 backups (no meals). */
 export function parseBackup(data: unknown): Backup {
   if (!isRecord(data)) throw new Error("Not a backup file.");
   if (data.app !== "daily-log" || (data.version !== 1 && data.version !== 2)) {
-    throw new Error("Not a Daily Log backup file.");
+    throw new Error("Not a Nouri backup file.");
   }
   const meals = data.meals ?? [];
   if (

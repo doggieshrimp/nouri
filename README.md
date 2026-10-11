@@ -1,4 +1,4 @@
-# Daily Log
+# Nouri
 
 A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 
@@ -47,7 +47,7 @@ npm run apk
 ```
 
 This builds the web app, syncs it into the Capacitor Android project, and writes a
-debug APK to `release/DailyLog.apk`. To open the native project in Android Studio,
+debug APK to `release/Nouri.apk`. To open the native project in Android Studio,
 run `npx cap open android`.
 
 ### Before a public release
@@ -66,7 +66,7 @@ run `npx cap open android`.
    `android/keystore.properties`. Both are gitignored; back them up.
 2. Bump the version with `npm version patch` (or `minor`/`major`). The Android
    versionCode is derived from it.
-3. `npm run aab` writes a signed bundle to `release/DailyLog-<version>.aab`
+3. `npm run aab` writes a signed bundle to `release/Nouri-<version>.aab`
    for upload to the Play Console.
 
 ## Roadmap

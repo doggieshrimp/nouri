@@ -49,7 +49,7 @@ export default function CalorieTracker() {
       <div className="w-full max-w-md">
         {/* Masthead */}
         <div className="flex items-baseline justify-between mb-1">
-          <h1 className="text-2xl font-black tracking-tight uppercase">Daily Log</h1>
+          <h1 className="text-2xl font-black tracking-tight uppercase">Nouri</h1>
           <div className="flex items-center gap-4">
             {!isToday && (
               <button
