@@ -9,8 +9,8 @@ body,
 body {
   margin: 0;
   background: #faf8f3;
-  /* Keep content clear of the phone's status and navigation bars.
-     The --safe-area-inset-* variables are injected by Capacitor on Android. */
+  /* Keep content clear of notches and system bars in browsers and on iOS.
+     The Android app pads natively in MainActivity, so these resolve to 0 there. */
   padding-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
   padding-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));

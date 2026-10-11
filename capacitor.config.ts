@@ -7,9 +7,8 @@ const config: CapacitorConfig = {
   backgroundColor: '#FAF8F3',
   plugins: {
     SystemBars: {
-      // Injects --safe-area-inset-* CSS variables, which older Android WebViews lack.
-      insetsHandling: 'css',
-      initialViewportFitValueHint: 'cover',
+      // MainActivity pads the web view natively instead (consistent on every WebView version).
+      insetsHandling: 'disable',
       // Dark status bar icons on the light paper background.
       style: 'LIGHT',
     },
