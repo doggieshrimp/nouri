@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.dailylog.app',
+  appId: 'com.nouri.dailylog',
   appName: 'Daily Log',
   webDir: 'dist',
   backgroundColor: '#FAF8F3',

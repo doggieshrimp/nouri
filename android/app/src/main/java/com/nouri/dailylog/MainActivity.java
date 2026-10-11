@@ -1,4 +1,4 @@
-package com.dailylog.app;
+package com.nouri.dailylog;
 
 import com.getcapacitor.BridgeActivity;
 

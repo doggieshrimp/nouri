@@ -1,7 +1,7 @@
 {
   "name": "calorie-tracker",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "android:sync": "npm run build && cap sync android",
-    "apk": "powershell -ExecutionPolicy Bypass -File scripts/build-apk.ps1"
+    "apk": "powershell -ExecutionPolicy Bypass -File scripts/build-apk.ps1",
+    "aab": "powershell -ExecutionPolicy Bypass -File scripts/build-apk.ps1 -Release",
+    "create-key": "powershell -ExecutionPolicy Bypass -File scripts/create-upload-key.ps1"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

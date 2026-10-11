@@ -40,6 +40,15 @@ This builds the web app, syncs it into the Capacitor Android project, and writes
 debug APK to `release/DailyLog.apk`. To open the native project in Android Studio,
 run `npx cap open android`.
 
+### Google Play releases
+
+1. One time: `npm run create-key` creates the upload key in `keys/` and writes
+   `android/keystore.properties`. Both are gitignored; back them up.
+2. Bump the version with `npm version patch` (or `minor`/`major`). The Android
+   versionCode is derived from it.
+3. `npm run aab` writes a signed bundle to `release/DailyLog-<version>.aab`
+   for upload to the Play Console.
+
 ## Roadmap
 
 - [x] Project setup, TypeScript, tests
