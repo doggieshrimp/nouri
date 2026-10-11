@@ -17,6 +17,7 @@ A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 - Tailwind CSS
 - Dexie (IndexedDB) for offline, on-device storage
 - Vitest for unit tests on the nutrition math
+- Capacitor for the Android app
 
 ## Getting started
 
@@ -26,6 +27,18 @@ npm run dev
 ```
 
 Other scripts: `npm test`, `npm run lint`, `npm run build`.
+
+## Android app
+
+Requires Android Studio (its bundled Java and SDK are used automatically).
+
+```bash
+npm run apk
+```
+
+This builds the web app, syncs it into the Capacitor Android project, and writes a
+debug APK to `release/DailyLog.apk`. To open the native project in Android Studio,
+run `npx cap open android`.
 
 ## Roadmap
 
