@@ -69,3 +69,18 @@ export function entryName(food: Food, grams: number): string {
   const hasBrand = food.brand && !food.name.toLowerCase().includes(food.brand.toLowerCase());
   return `${hasBrand ? `${food.brand} ` : ""}${food.name} (${grams}g)`;
 }
+
+/** Nothing has more than ~900 kcal per 100g (pure fat). */
+const MAX_KCAL_PER_100G = 900;
+
+/**
+ * Sanity-checks a per-100g calorie value from a food database. Some entries record
+ * kilojoules in the calorie field (e.g. 1580 for oats, ~378 kcal), so impossible
+ * values are converted from kJ. Returns null if even that isn't plausible.
+ */
+export function plausibleKcalPer100g(kcal: number): number | null {
+  if (kcal < 0) return null;
+  if (kcal <= MAX_KCAL_PER_100G) return kcal;
+  const fromKj = kcal / 4.184;
+  return fromKj <= MAX_KCAL_PER_100G ? fromKj : null;
+}

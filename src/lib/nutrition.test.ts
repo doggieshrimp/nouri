@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { entryName, goalPercent, scaleFood, sumMacros, type Food } from "./nutrition";
+import { entryName, goalPercent, plausibleKcalPer100g, scaleFood, sumMacros, type Food } from "./nutrition";
 
 const chicken: Food = { name: "Chicken breast, raw", calories: 165, protein: 31, carbs: 0, fat: 3.6 };
 
@@ -59,5 +59,21 @@ describe("entryName", () => {
 
   it("works without a brand", () => {
     expect(entryName(chicken, 100)).toBe("Chicken breast, raw (100g)");
+  });
+});
+
+describe("plausibleKcalPer100g", () => {
+  it("keeps normal values", () => {
+    expect(plausibleKcalPer100g(389)).toBe(389);
+    expect(plausibleKcalPer100g(884)).toBe(884); // olive oil
+  });
+
+  it("converts impossible values from kJ", () => {
+    expect(Math.round(plausibleKcalPer100g(1580)!)).toBe(378);
+  });
+
+  it("rejects values that are implausible either way", () => {
+    expect(plausibleKcalPer100g(50000)).toBeNull();
+    expect(plausibleKcalPer100g(-5)).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { round1, type Food } from "./nutrition";
+import { plausibleKcalPer100g, round1, type Food } from "./nutrition";
 
 // USDA FoodData Central: https://fdc.nal.usda.gov/api-guide
 const SEARCH_URL = "https://api.nal.usda.gov/fdc/v1/foods/search";
@@ -53,8 +53,10 @@ function servingFrom(f: UsdaFood): Food["serving"] {
   const unit = f.servingSizeUnit?.toLowerCase();
   if (!f.servingSize || f.servingSize <= 0 || (unit !== "g" && unit !== "grm")) return undefined;
   const grams = round1(f.servingSize);
-  const household = f.householdServingFullText?.trim();
-  return { grams, label: household ? household.toLowerCase() : "1 serving" };
+  const household = f.householdServingFullText?.trim().toLowerCase();
+  // Some products only repeat the weight here ("45 grm"), which says nothing new.
+  const isJustWeight = household && /^[\d.,]+\s*(g|grm|gram|grams)$/.test(household);
+  return { grams, label: household && !isJustWeight ? household : "1 serving" };
 }
 
 /** Converts a USDA search result into a per-100g Food. Returns null if it has no calorie data. */
@@ -66,13 +68,15 @@ export function parseUsdaFood(f: UsdaFood): Food | null {
     nutrients.find((n) => n.nutrientId === id && n.unitName?.toUpperCase() === "KCAL" && typeof n.value === "number"),
   ).find(Boolean);
   if (!energy) return null;
+  const kcal = plausibleKcalPer100g(energy.value!);
+  if (kcal === null) return null;
 
   const brandRaw = f.brandName || f.brandOwner;
   return {
     name: sentenceCase(f.description.trim()),
     brand: brandRaw ? titleCase(brandRaw.trim()) : undefined,
     fdcId: f.fdcId,
-    calories: Math.round(energy.value!),
+    calories: Math.round(kcal),
     protein: round1(find(NUTRIENT.protein)?.value ?? 0),
     carbs: round1(find(NUTRIENT.carbs)?.value ?? 0),
     fat: round1(find(NUTRIENT.fat)?.value ?? 0),
@@ -107,10 +111,12 @@ export async function searchUsda(query: string, signal?: AbortSignal): Promise<F
     searchType(query, BRANDED_TYPES, 12, apiKey, signal),
   ]);
 
-  const seen = new Set<number>();
+  // Drop repeats: the same fdcId, or the same food listed in two USDA datasets.
+  const seen = new Set<string>();
   return [...generic, ...branded].filter((f) => {
-    if (f.fdcId === undefined || seen.has(f.fdcId)) return false;
-    seen.add(f.fdcId);
+    const keys = [`id:${f.fdcId}`, `food:${f.name.toLowerCase()}|${f.brand ?? ""}|${f.calories}`];
+    if (keys.some((k) => seen.has(k))) return false;
+    keys.forEach((k) => seen.add(k));
     return true;
   });
 }

@@ -71,6 +71,16 @@ describe("parseUsdaFood", () => {
     expect(parseUsdaFood({ ...chobani, householdServingFullText: null })?.serving).toEqual({ grams: 150, label: "1 serving" });
   });
 
+  it("labels servings whose household text is only a weight as one serving", () => {
+    expect(parseUsdaFood({ ...chobani, householdServingFullText: "45 GRM" })?.serving?.label).toBe("1 serving");
+  });
+
+  it("converts calorie values that are really kilojoules", () => {
+    // Real USDA entry: Quaker oatmeal listed at "1580 KCAL" per 100g.
+    const food = parseUsdaFood({ ...chobani, foodNutrients: [{ nutrientId: 1008, unitName: "KCAL", value: 1580 }] });
+    expect(food?.calories).toBe(378);
+  });
+
   it("ignores servings not measured in grams", () => {
     expect(parseUsdaFood({ ...chobani, servingSizeUnit: "ml" })?.serving).toBeUndefined();
   });
@@ -97,6 +107,13 @@ describe("searchUsda", () => {
     stubFetch({ "Foundation,SR Legacy,Survey (FNDDS)": [rotisserie], Branded: [chobani, rotisserie] });
     const results = await searchUsda("chicken");
     expect(results.map((f) => f.fdcId)).toEqual([2705964, 2038865]);
+  });
+
+  it("merges the same food listed in two datasets", async () => {
+    const sr = { ...rotisserie, fdcId: 1, dataType: "SR Legacy" };
+    const fndds = { ...rotisserie, fdcId: 2 };
+    stubFetch({ "Foundation,SR Legacy,Survey (FNDDS)": [sr, fndds] });
+    expect((await searchUsda("chicken")).map((f) => f.fdcId)).toEqual([1]);
   });
 
   it("retries a failed request once", async () => {

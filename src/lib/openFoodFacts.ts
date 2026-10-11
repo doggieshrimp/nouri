@@ -1,4 +1,4 @@
-import { round1, type Food } from "./nutrition";
+import { plausibleKcalPer100g, round1, type Food } from "./nutrition";
 
 // Open Food Facts: free, worldwide product database (includes USDA's branded foods).
 // https://openfoodfacts.github.io/openfoodfacts-server/api/
@@ -72,8 +72,9 @@ export function productName(p: OffProduct): string {
 /** Converts an Open Food Facts product into a per-100g Food, or null without calorie data. */
 export function parseOffProduct(p: OffProduct, barcode: string): Food | null {
   const n = p.nutriments ?? {};
-  const kcal = num(n["energy-kcal_100g"]) ?? (num(n["energy_100g"]) !== undefined ? num(n["energy_100g"])! / 4.184 : undefined);
-  if (kcal === undefined) return null;
+  const rawKcal = num(n["energy-kcal_100g"]) ?? (num(n["energy_100g"]) !== undefined ? num(n["energy_100g"])! / 4.184 : undefined);
+  const kcal = rawKcal === undefined ? null : plausibleKcalPer100g(rawKcal);
+  if (kcal === null) return null;
 
   const brand = p.brands?.split(",")[0]?.trim();
   return {
