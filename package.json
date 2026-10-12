@@ -12,7 +12,8 @@
     "android:sync": "npm run build && cap sync android",
     "apk": "powershell -ExecutionPolicy Bypass -File scripts/build-apk.ps1",
     "aab": "powershell -ExecutionPolicy Bypass -File scripts/build-apk.ps1 -Release",
-    "create-key": "powershell -ExecutionPolicy Bypass -File scripts/create-upload-key.ps1"
+    "create-key": "powershell -ExecutionPolicy Bypass -File scripts/create-upload-key.ps1",
+    "store-shots": "node scripts/store-screenshots.mjs"
   },
   "dependencies": {
     "@capacitor-mlkit/barcode-scanning": "^8.2.1",

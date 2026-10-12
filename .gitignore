@@ -31,3 +31,6 @@ release/
 
 # Release signing key (back it up somewhere safe, never commit it)
 keys/
+
+# Unframed captures from npm run store-shots (regenerated each run)
+store-listing/raw/
