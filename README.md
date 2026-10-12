@@ -9,7 +9,7 @@ A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 - Daily calorie goal with remaining/over indicator and progress bar
 - Goal calculator (Mifflin-St Jeor) from height, weight, age, sex and activity, with a safe minimum; the inputs are never stored, only the chosen goal
 - Protein, carbs and fat totals
-- Food search across USDA FoodData Central (generic and branded foods), with label serving sizes
+- Food search across USDA FoodData Central (basic and US branded foods) and, in the Android app, Open Food Facts supermarket products from the phone's country first, with label serving sizes
 - Recent foods and saved meals for one-tap logging
 - Display and reading settings for dyslexic readers (following the British Dyslexia Association style guide): tinted or dark backgrounds, Open Sans, Lexend, Atkinson Hyperlegible or OpenDyslexic, larger text, extra spacing, and a no-capitals/no-italics mode; all text colours meet WCAG AA contrast
 - Privacy policy built in, plus an in-app feedback button for testers (Google Forms)

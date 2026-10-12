@@ -2,8 +2,8 @@ import { plausibleKcalPer100g, round1, type Food } from "./nutrition";
 
 // USDA FoodData Central: https://fdc.nal.usda.gov/api-guide
 const SEARCH_URL = "https://api.nal.usda.gov/fdc/v1/foods/search";
-const GENERIC_TYPES = "Foundation,SR Legacy,Survey (FNDDS)";
-const BRANDED_TYPES = "Branded";
+const GENERIC_TYPES = ["Foundation", "SR Legacy", "Survey (FNDDS)"];
+const BRANDED_TYPES = ["Branded"];
 
 const NUTRIENT = { protein: 1003, fat: 1004, carbs: 1005 } as const;
 // Most foods report energy as 1008; some Foundation foods only have the Atwater variants.
@@ -86,37 +86,49 @@ export function parseUsdaFood(f: UsdaFood): Food | null {
 
 export class UsdaError extends Error {}
 
-async function searchType(query: string, dataType: string, pageSize: number, apiKey: string, signal?: AbortSignal) {
-  const params = new URLSearchParams({ api_key: apiKey, query, dataType, pageSize: String(pageSize) });
-  const url = `${SEARCH_URL}?${params}`;
-  let res = await fetch(url, { signal });
+async function searchType(query: string, dataType: string[], pageSize: number, apiKey: string, signal?: AbortSignal) {
+  // POST with a JSON body: the GET form, with "Survey (FNDDS)" in the URL, is rejected by
+  // USDA's gateway (HTTP 400) for most queries, which hid basics like tortillas and rolls.
+  const url = `${SEARCH_URL}?${new URLSearchParams({ api_key: apiKey })}`;
+  const init: RequestInit = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, dataType, pageSize }),
+    signal,
+  };
+  let res = await fetch(url, init);
   // The API occasionally fails a valid request; one retry usually succeeds.
-  if (!res.ok && res.status !== 429) res = await fetch(url, { signal });
+  if (!res.ok && res.status !== 429) res = await fetch(url, init);
   if (res.status === 429) throw new UsdaError("Too many searches for now. Try again in a little while.");
   if (!res.ok) throw new UsdaError(`The food database returned an error (${res.status}).`);
   const data = (await res.json()) as { foods?: UsdaFood[] };
   return (data.foods ?? []).map(parseUsdaFood).filter((f): f is Food => f !== null);
 }
 
-/**
- * Searches USDA FoodData Central. Generic foods (e.g. "Banana, raw") come first because
- * they're cleaner; branded products follow. Values are per 100g.
- */
-export async function searchUsda(query: string, signal?: AbortSignal): Promise<Food[]> {
+export interface UsdaResults {
+  /** Generic foods, e.g. "Tortilla, flour". */
+  generic: Food[];
+  /** Branded (mostly US) products. */
+  branded: Food[];
+}
+
+/** Searches USDA FoodData Central. Values are per 100g. */
+export async function searchUsda(query: string, signal?: AbortSignal): Promise<UsdaResults> {
   const apiKey = usdaApiKey();
   if (!apiKey) throw new UsdaError("Online food search isn't set up (missing API key).");
 
   const [generic, branded] = await Promise.all([
     searchType(query, GENERIC_TYPES, 8, apiKey, signal),
-    searchType(query, BRANDED_TYPES, 12, apiKey, signal),
+    searchType(query, BRANDED_TYPES, 10, apiKey, signal),
   ]);
 
   // Drop repeats: the same fdcId, or the same food listed in two USDA datasets.
   const seen = new Set<string>();
-  return [...generic, ...branded].filter((f) => {
+  const unique = (f: Food) => {
     const keys = [`id:${f.fdcId}`, `food:${f.name.toLowerCase()}|${f.brand ?? ""}|${f.calories}`];
     if (keys.some((k) => seen.has(k))) return false;
     keys.forEach((k) => seen.add(k));
     return true;
-  });
+  };
+  return { generic: generic.filter(unique), branded: branded.filter(unique) };
 }

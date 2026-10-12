@@ -96,24 +96,34 @@ describe("searchUsda", () => {
   function stubFetch(byType: Record<string, UsdaFood[]>, status = 200) {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string) => {
-        const type = new URL(url).searchParams.get("dataType")!;
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const type = (JSON.parse(init.body as string) as { dataType: string[] }).dataType.join(",");
         return new Response(JSON.stringify({ foods: byType[type] ?? [] }), { status });
       }),
     );
   }
 
-  it("lists generic foods before branded ones and removes duplicates", async () => {
+  it("separates generic and branded foods and removes duplicates", async () => {
     stubFetch({ "Foundation,SR Legacy,Survey (FNDDS)": [rotisserie], Branded: [chobani, rotisserie] });
     const results = await searchUsda("chicken");
-    expect(results.map((f) => f.fdcId)).toEqual([2705964, 2038865]);
+    expect(results.generic.map((f) => f.fdcId)).toEqual([2705964]);
+    expect(results.branded.map((f) => f.fdcId)).toEqual([2038865]);
+  });
+
+  it("sends the search as a JSON POST", async () => {
+    stubFetch({});
+    await searchUsda("tortilla");
+    const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toMatchObject({ query: "tortilla", dataType: ["Foundation", "SR Legacy", "Survey (FNDDS)"] });
+    expect(url).not.toContain("dataType");
   });
 
   it("merges the same food listed in two datasets", async () => {
     const sr = { ...rotisserie, fdcId: 1, dataType: "SR Legacy" };
     const fndds = { ...rotisserie, fdcId: 2 };
     stubFetch({ "Foundation,SR Legacy,Survey (FNDDS)": [sr, fndds] });
-    expect((await searchUsda("chicken")).map((f) => f.fdcId)).toEqual([1]);
+    expect((await searchUsda("chicken")).generic.map((f) => f.fdcId)).toEqual([1]);
   });
 
   it("retries a failed request once", async () => {
@@ -129,7 +139,7 @@ describe("searchUsda", () => {
     );
     // Two data types are searched in parallel; only the first call fails.
     const results = await searchUsda("chicken");
-    expect(results.map((f) => f.fdcId)).toEqual([2705964]);
+    expect([...results.generic, ...results.branded].map((f) => f.fdcId)).toEqual([2705964]);
     expect(calls).toBe(3);
   });
 

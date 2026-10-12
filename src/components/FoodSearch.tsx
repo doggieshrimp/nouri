@@ -6,6 +6,8 @@ import { addEntry, addMealToDay, deleteMeal, getMeals, getRecentItems, type LogI
 import type { DateKey } from "../lib/dates";
 import { entryName, scaleFood, sumMacros, type Food } from "../lib/nutrition";
 import { canScan, scanBarcode } from "../lib/scanner";
+import { canSearchOpenFoodFacts, searchOpenFoodFacts } from "../lib/offSearch";
+import { lookupBarcode } from "../lib/openFoodFacts";
 import { searchUsda, UsdaError } from "../lib/usda";
 import { useDebounced } from "../lib/useDebounced";
 import { ALERT, GOLD, INK, PAPER, RULE } from "../theme";
@@ -15,8 +17,14 @@ import FoodEditor from "./FoodEditor";
 
 interface UsdaResult {
   query: string;
-  foods: Food[];
+  generic: Food[];
+  branded: Food[];
   error: string | null;
+}
+
+interface OffResult {
+  query: string;
+  foods: Food[];
 }
 
 const NO_ITEMS: LogItem[] = [];
@@ -25,6 +33,26 @@ const NO_MEALS: Meal[] = [];
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <div className="text-[0.6875rem] font-bold uppercase tracking-widest opacity-70 px-3 pt-3 pb-1">{children}</div>
+  );
+}
+
+function FoodRows({ label, foods, onPick }: { label: string; foods: Food[]; onPick: (food: Food) => void }) {
+  if (foods.length === 0) return null;
+  return (
+    <>
+      <SectionLabel>{label}</SectionLabel>
+      <ul>
+        {foods.map((f) => (
+          <Row
+            key={`${label}-${f.fdcId ?? f.barcode ?? f.name}`}
+            title={f.name}
+            subtitle={[f.brand, f.serving && `${f.serving.label} = ${f.serving.grams} g`].filter(Boolean).join(" · ")}
+            right={`${f.calories} kcal/100g`}
+            onClick={() => onPick(f)}
+          />
+        ))}
+      </ul>
+    </>
   );
 }
 
@@ -61,22 +89,53 @@ export default function FoodSearch({ date }: { date: DateKey }) {
   const trimmed = query.trim();
   const q = trimmed.toLowerCase();
   const debounced = useDebounced(trimmed, 400);
-  const [usda, setUsda] = useState<UsdaResult>({ query: "", foods: [], error: null });
+  const [usda, setUsda] = useState<UsdaResult>({ query: "", generic: [], branded: [], error: null });
+  const [off, setOff] = useState<OffResult>({ query: "", foods: [] });
 
   useEffect(() => {
     if (debounced.length < 2) return;
     const ctrl = new AbortController();
     searchUsda(debounced, ctrl.signal).then(
-      (foods) => setUsda({ query: debounced, foods, error: null }),
+      ({ generic, branded }) => setUsda({ query: debounced, generic, branded, error: null }),
       (err: unknown) => {
         if (ctrl.signal.aborted) return;
         const error =
           err instanceof UsdaError ? err.message : "Couldn't reach the food database. Check your internet connection.";
-        setUsda({ query: debounced, foods: [], error });
+        setUsda({ query: debounced, generic: [], branded: [], error });
       },
     );
     return () => ctrl.abort();
   }, [debounced]);
+
+  // Open Food Facts adds local supermarket products (Android app only). Failures just
+  // leave its section empty, since USDA results still show.
+  useEffect(() => {
+    if (!canSearchOpenFoodFacts || debounced.length < 2) return;
+    let cancelled = false;
+    searchOpenFoodFacts(debounced).then(
+      (foods) => !cancelled && setOff({ query: debounced, foods }),
+      () => !cancelled && setOff({ query: debounced, foods: [] }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [debounced]);
+
+  // Search results don't include serving sizes, so fetch the full product once it's picked.
+  const pendingBarcode = selected && selected.food.barcode && !selected.food.serving ? selected.food.barcode : null;
+  useEffect(() => {
+    if (!pendingBarcode) return;
+    const ctrl = new AbortController();
+    lookupBarcode(pendingBarcode, ctrl.signal).then(
+      (result) => {
+        const serving = result.status === "found" ? result.food.serving : undefined;
+        if (!serving) return;
+        setSelected((s) => (s && s.food.barcode === pendingBarcode ? { ...s, food: { ...s.food, serving } } : s));
+      },
+      () => {}, // Optional extra; the food can be logged by weight without it.
+    );
+    return () => ctrl.abort();
+  }, [pendingBarcode]);
 
   const recentMatches = useMemo(
     () => (q ? recent.filter((r) => r.name.toLowerCase().includes(q)).slice(0, 3) : []),
@@ -87,7 +146,9 @@ export default function FoodSearch({ date }: { date: DateKey }) {
     [q],
   );
   const usdaCurrent = usda.query === trimmed;
-  const usdaLoading = trimmed.length >= 2 && !usdaCurrent;
+  const offCurrent = !canSearchOpenFoodFacts || off.query === trimmed;
+  const offFoods = canSearchOpenFoodFacts && off.query === trimmed ? off.foods : [];
+  const searching = trimmed.length >= 2 && (!usdaCurrent || !offCurrent);
 
   function flash(message: string) {
     setStatus(message);
@@ -167,7 +228,9 @@ export default function FoodSearch({ date }: { date: DateKey }) {
     );
   }
 
-  const hasTypedResults = recentMatches.length + commonMatches.length + (usdaCurrent ? usda.foods.length : 0) > 0;
+  const onlineCount = (usdaCurrent ? usda.generic.length + usda.branded.length : 0) + offFoods.length;
+  const hasTypedResults = recentMatches.length + commonMatches.length + onlineCount > 0;
+  const pick = (food: Food) => setSelected({ food });
 
   return (
     <div className="mt-6">
@@ -186,7 +249,7 @@ export default function FoodSearch({ date }: { date: DateKey }) {
           className="flex-1 min-w-0 py-2 bg-transparent outline-none text-sm"
           aria-label="Search foods"
         />
-        {usdaLoading && <Loader2 size={16} className="animate-spin opacity-70 shrink-0" aria-label="Searching" />}
+        {searching && <Loader2 size={16} className="animate-spin opacity-70 shrink-0" aria-label="Searching" />}
         {query && (
           <button type="button" onClick={() => setQuery("")} className="opacity-70 p-1" aria-label="Clear search">
             <X size={16} />
@@ -227,7 +290,8 @@ export default function FoodSearch({ date }: { date: DateKey }) {
         </div>
       )}
 
-      {/* Typing: recent + built-in matches instantly, USDA results once they arrive */}
+      {/* Typing: recent + built-in matches instantly, then basic foods (USDA), local
+          products (Open Food Facts) and US branded products as each search returns */}
       {trimmed && !showCustom && (
         <div className="border-2 border-t-0 max-h-96 overflow-y-auto" style={{ borderColor: INK, background: PAPER }}>
           {recentMatches.length > 0 && (
@@ -250,25 +314,16 @@ export default function FoodSearch({ date }: { date: DateKey }) {
               </ul>
             </>
           )}
-          {usdaCurrent && usda.foods.length > 0 && (
-            <>
-              <SectionLabel>USDA database</SectionLabel>
-              <ul>
-                {usda.foods.map((f) => (
-                  <Row
-                    key={`u-${f.fdcId}`}
-                    title={f.name}
-                    subtitle={[f.brand, f.serving && `${f.serving.label} = ${f.serving.grams} g`].filter(Boolean).join(" · ")}
-                    right={`${f.calories} kcal/100g`}
-                    onClick={() => setSelected({ food: f })}
-                  />
-                ))}
-              </ul>
-            </>
+          {usdaCurrent && <FoodRows label="Basic foods" foods={usda.generic} onPick={pick} />}
+          <FoodRows label="Products" foods={offFoods} onPick={pick} />
+          {usdaCurrent && (
+            <FoodRows label={canSearchOpenFoodFacts ? "US products" : "Branded products"} foods={usda.branded} onPick={pick} />
           )}
-          {usdaCurrent && usda.error && <div className="px-3 py-2 text-xs" style={{ color: ALERT }}>{usda.error}</div>}
-          {usdaLoading && !hasTypedResults && <div className="px-3 py-2 text-xs opacity-70 italic">Searching…</div>}
-          {!usdaLoading && !hasTypedResults && !usda.error && (
+          {usdaCurrent && usda.error && offFoods.length === 0 && (
+            <div className="px-3 py-2 text-xs" style={{ color: ALERT }}>{usda.error}</div>
+          )}
+          {searching && !hasTypedResults && <div className="px-3 py-2 text-xs opacity-70 italic">Searching…</div>}
+          {!searching && !hasTypedResults && !usda.error && (
             <div className="px-3 py-2 text-xs opacity-70 italic">No matches.</div>
           )}
           <div className="px-3 py-2" style={{ borderTop: `1px solid ${RULE}` }}>
