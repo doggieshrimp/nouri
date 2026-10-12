@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.nouri.dailylog',
+  appId: 'io.github.doggieshrimp.nouri',
   appName: 'Nouri',
   webDir: 'dist',
   backgroundColor: '#FAF8F3',

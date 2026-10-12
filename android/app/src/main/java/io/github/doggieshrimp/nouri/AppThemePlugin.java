@@ -1,4 +1,4 @@
-package com.nouri.dailylog;
+package io.github.doggieshrimp.nouri;
 
 import android.graphics.Color;
 import android.view.Window;

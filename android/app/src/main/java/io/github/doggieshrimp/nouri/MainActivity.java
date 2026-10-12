@@ -1,4 +1,4 @@
-package com.nouri.dailylog;
+package io.github.doggieshrimp.nouri;
 
 import android.os.Bundle;
 import android.view.View;
