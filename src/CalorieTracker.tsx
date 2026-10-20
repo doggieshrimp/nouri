@@ -7,18 +7,25 @@ import DisplaySettings from "./components/DisplaySettings";
 import EntryList from "./components/EntryList";
 import FoodSearch from "./components/FoodSearch";
 import GoalCalculator from "./components/GoalCalculator";
-import { DEFAULT_GOAL, getEntriesForDate, getGoal, setGoal, type LogEntry } from "./db";
+import Progress from "./components/Progress";
+import Segmented from "./components/Segmented";
+import { DEFAULT_GOAL, getEntriesForDate, getGoal, getGoalHistory, setGoal, type LogEntry } from "./db";
 import { addDays, formatDateKey, todayKey, type DateKey } from "./lib/dates";
 import { goalPercent, sumMacros } from "./lib/nutrition";
+import { goalOn } from "./lib/progress";
 import { ALERT, GOOD, INK, PAPER, TRACK } from "./theme";
 
 const NO_ENTRIES: LogEntry[] = [];
 
 export default function CalorieTracker() {
+  const [view, setView] = useState<"log" | "progress">("log");
   const [date, setDate] = useState<DateKey>(todayKey);
   const isToday = date === todayKey();
 
-  const goal = useLiveQuery(getGoal) ?? DEFAULT_GOAL;
+  const currentGoal = useLiveQuery(getGoal) ?? DEFAULT_GOAL;
+  const goalHistory = useLiveQuery(getGoalHistory);
+  // Past days show the goal they had; editing the goal changes it from today onwards.
+  const goal = isToday ? currentGoal : goalOn(date, goalHistory ?? [], currentGoal);
   // useLiveQuery keeps returning the previous day's result until the new query
   // resolves, so tag results with their date and ignore ones for another day.
   const dayResult = useLiveQuery(
@@ -51,7 +58,7 @@ export default function CalorieTracker() {
         <div className="flex items-baseline justify-between mb-1">
           <h1 className="text-2xl font-black tracking-tight uppercase">Nouri</h1>
           <div className="flex items-center gap-4">
-            {!isToday && (
+            {view === "log" && !isToday && (
               <button
                 type="button"
                 onClick={() => setDate(todayKey())}
@@ -71,6 +78,18 @@ export default function CalorieTracker() {
             </button>
           </div>
         </div>
+        <div className="my-2">
+          <Segmented
+            label="Page"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "log", label: "Food log" },
+              { value: "progress", label: "Progress" },
+            ]}
+          />
+        </div>
+        {view === "log" && (
         <div className="flex items-center justify-between mb-1">
           <button
             type="button"
@@ -94,9 +113,21 @@ export default function CalorieTracker() {
             <ChevronRight size={18} />
           </button>
         </div>
+        )}
         <div style={{ height: 6, background: INK }} />
 
         {showDisplay && <DisplaySettings onClose={() => setShowDisplay(false)} />}
+
+        {view === "progress" ? (
+          <Progress
+            onOpenDay={(day) => {
+              setDate(day);
+              setView("log");
+              window.scrollTo(0, 0);
+            }}
+          />
+        ) : (
+        <>
 
         {/* Nutrition-facts-style summary panel */}
         <div className="mt-3 border-2 px-4 pt-3 pb-4" style={{ borderColor: INK }}>
@@ -196,6 +227,8 @@ export default function CalorieTracker() {
 
         <FoodSearch date={date} />
         <EntryList entries={entries} isToday={isToday} />
+        </>
+        )}
         <BackupControls />
         <AboutFooter />
       </div>

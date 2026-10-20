@@ -7,14 +7,19 @@ import {
   DEFAULT_GOAL,
   deleteEntry,
   exportBackup,
+  deleteWeight,
+  getCaloriesByDay,
   getEntriesForDate,
   getGoal,
+  getGoalHistory,
   getMeals,
   getRecentItems,
+  getWeighIns,
   importBackup,
   parseBackup,
   saveMeal,
   setGoal,
+  setWeight,
 } from "./db";
 
 const oats = { name: "Oats", calories: 389, protein: 17, carbs: 66, fat: 7 };
@@ -24,6 +29,40 @@ beforeEach(async () => {
   await db.entries.clear();
   await db.settings.clear();
   await db.meals.clear();
+  await db.weights.clear();
+});
+
+describe("progress data", () => {
+  it("totals calories per day within a range", async () => {
+    await addEntry("2026-10-12", oats);
+    await addEntry("2026-10-12", apple);
+    await addEntry("2026-10-14", apple);
+    await addEntry("2026-10-20", apple); // outside the range
+    const byDay = await getCaloriesByDay("2026-10-12", "2026-10-18");
+    expect([...byDay]).toEqual([
+      ["2026-10-12", 441],
+      ["2026-10-14", 52],
+    ]);
+  });
+
+  it("keeps one weigh-in per day and can delete it", async () => {
+    await setWeight("2026-10-12", 84.2);
+    await setWeight("2026-10-12", 84.0);
+    await setWeight("2026-10-14", 83.6);
+    expect(await getWeighIns("2026-10-01", "2026-10-31")).toEqual([
+      { date: "2026-10-12", kg: 84 },
+      { date: "2026-10-14", kg: 83.6 },
+    ]);
+    await deleteWeight("2026-10-12");
+    expect(await getWeighIns("2026-10-01", "2026-10-31")).toHaveLength(1);
+  });
+
+  it("records when the goal changes", async () => {
+    await setGoal(1800);
+    const history = await getGoalHistory();
+    expect(history).toHaveLength(1);
+    expect(history[0].goal).toBe(1800);
+  });
 });
 
 describe("entries", () => {
@@ -133,6 +172,29 @@ describe("backup compatibility", () => {
     await db.meals.clear();
     await importBackup(backup);
     expect((await getMeals()).map((m) => m.name)).toEqual(["Breakfast"]);
+  });
+
+  it("includes weights and goal history in backups", async () => {
+    await setWeight("2026-10-12", 84);
+    await setGoal(1800);
+    const backup = parseBackup(JSON.parse(JSON.stringify(await exportBackup())));
+    await db.weights.clear();
+    await db.settings.clear();
+    await importBackup(backup);
+    expect(await getWeighIns("2026-10-01", "2026-10-31")).toEqual([{ date: "2026-10-12", kg: 84 }]);
+    expect((await getGoalHistory()).map((c) => c.goal)).toEqual([1800]);
+    expect(await getGoal()).toBe(1800);
+  });
+
+  it("still imports version 2 backups, which had no weights", async () => {
+    const v2 = { app: "daily-log", version: 2, exportedAt: "2026-10-11T12:00:00.000Z", goal: 1900, entries: [], meals: [] };
+    await importBackup(parseBackup(v2));
+    expect(await getGoal()).toBe(1900);
+  });
+
+  it("rejects backups with malformed weights", () => {
+    const bad = { app: "daily-log", version: 3, goal: 1900, entries: [], meals: [], weights: [{ date: "x", kg: "84" }] };
+    expect(() => parseBackup(bad)).toThrow("damaged");
   });
 
   it("still imports version 1 backups, which had no meals", async () => {

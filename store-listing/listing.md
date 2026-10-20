@@ -32,6 +32,11 @@ Log your day in seconds
 • See calories, protein, carbs, sugars, fat and saturated fat for every day, and look back at past days
 • Drinks are measured in millilitres, with label servings like "1 can"
 
+See your progress
+• Weekly and monthly charts show which days you hit your calorie goal
+• Log your weight in kg, pounds or stone and pounds
+• A 7-day weight trend smooths out the daily ups and downs
+
 Set a goal that fits you
 • Get a suggested daily calorie goal from your height, weight, age and activity
 • Choose to lose, maintain or gain weight at a steady pace
@@ -47,7 +52,7 @@ Nouri is designed with dyslexic readers in mind, following the British Dyslexia 
 Private by design
 • No account and no sign-up
 • No adverts, no tracking and no analytics
-• Your food log is stored only on your phone, and you can export a backup any time
+• Your food log and weight are stored only on your phone, and you can export a backup any time
 • Searches only send the words you type, plus your country setting, to public food databases
 
 Early version

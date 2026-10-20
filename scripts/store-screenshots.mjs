@@ -143,6 +143,21 @@ const SEED = `
   if (!crumpets || !tortilla) throw new Error("Couldn't fetch demo foods");
 
   const day = todayKey();
+  const { addDays } = await import("/src/lib/dates.ts");
+
+  // Three weeks of history for the Progress page: daily totals around the goal, and
+  // weigh-ins drifting down with realistic day-to-day noise and a few missed days.
+  const pastCalories = [1840, 2120, 1760, 1905, 0, 1690, 2230, 1810, 1870, 1950, 1720, 0, 2040, 1790, 1850, 1680, 1930, 2310, 1770, 1820];
+  for (let i = 0; i < pastCalories.length; i++) {
+    if (pastCalories[i] === 0) continue; // a day with nothing logged
+    await db.addEntry(addDays(day, -(i + 1)), { name: "Logged day", calories: pastCalories[i], protein: 0, carbs: 0, fat: 0 });
+  }
+  const noise = [0.3, -0.2, 0.4, -0.1, 0, 0.5, -0.3, 0.2, -0.4, 0.1, 0.3, -0.2, 0.1, -0.1, 0.4, -0.3, 0.2, 0, -0.2, 0.3, 0.1, -0.1, 0.2, -0.3, 0.1, 0, -0.1, 0.2];
+  for (let i = 27; i >= 0; i--) {
+    if (i % 5 === 3) continue; // skipped weigh-ins
+    await db.setWeight(addDays(day, -i), 84.8 - (27 - i) * 0.07 + noise[i]);
+  }
+
   const log = async (food, grams) => {
     await db.addEntry(day, { name: n.entryName(food, grams), ...n.scaleFood(food, grams), food, grams });
     await new Promise((r) => setTimeout(r, 5));
@@ -219,6 +234,35 @@ const scenes = [
       await sleep(300);
       // From the age field down to the suggested goal.
       scrollToEl(byText("Age"), 8);
+    `,
+  },
+  {
+    file: "07-progress.png",
+    caption: "See if you hit your goals",
+    sub: "Every day of the week or month at a glance",
+    run: `
+      [...document.querySelectorAll('[role="radio"]')].find((b) => b.textContent.trim() === "Progress").click();
+      await sleep(500);
+      // Last week is complete, which shows the chart better than a half-finished week.
+      $('[aria-label="Previous week"]').click();
+      await sleep(600);
+      // Tap Tuesday so the readout shows a day over goal.
+      const days = document.querySelector('svg[role="img"]').querySelectorAll('rect[fill-opacity="0"]');
+      days[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await sleep(300);
+      window.scrollTo(0, 0);
+    `,
+  },
+  {
+    file: "08-weight.png",
+    caption: "Watch your weight trend",
+    sub: "A 7-day average smooths out daily ups and downs",
+    run: `
+      [...document.querySelectorAll('[role="radio"]')].find((b) => b.textContent.trim() === "Progress").click();
+      await sleep(400);
+      [...document.querySelectorAll('[role="radio"]')].find((b) => b.textContent.trim() === "Month").click();
+      await sleep(600);
+      scrollToEl([...document.querySelectorAll("h2")].find((h) => h.textContent.trim() === "Weight"), 10);
     `,
   },
   {

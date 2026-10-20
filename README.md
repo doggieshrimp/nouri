@@ -7,6 +7,7 @@ A free, ad-free calorie and macro tracker, styled after a nutrition-facts label.
 ## Features
 
 - Daily calorie goal with remaining/over indicator and progress bar
+- Progress page: weekly and monthly calorie charts against your goal (judged against the goal you had on each day), and weight tracking in kg, lb or stone with a 7-day trend
 - Goal calculator (Mifflin-St Jeor) from height, weight, age, sex and activity, with a safe minimum; the inputs are never stored, only the chosen goal
 - Protein, carbs and fat totals
 - Food search across USDA FoodData Central (basic and US branded foods) and, in the Android app, Open Food Facts supermarket products from the phone's country first, with label serving sizes
@@ -78,4 +79,4 @@ run `npx cap open android`.
 - [x] USDA FoodData Central search, recent foods, saved meals
 - [x] Android app (Capacitor), Google Play release setup
 - [x] Barcode scanning
-- [ ] Weight tracking with a trend line, weekly charts
+- [x] Weight tracking with a trend line, weekly and monthly charts
