@@ -69,9 +69,40 @@ describe("parseOffProduct", () => {
     expect(parseOffProduct(p, "1")?.serving?.label).toBe("1 serving");
   });
 
-  it("skips servings measured in ml", () => {
-    const p = { ...oceanSpray, serving_quantity_unit: "ml" };
+  it("treats products sold by volume as drinks, per 100ml", () => {
+    // Trimmed from Open Food Facts barcode 5449000000996.
+    const cola: OffProduct = {
+      product_name: "Coca-Cola Original",
+      brands: "Coca-Cola",
+      quantity: "330 ml",
+      product_quantity_unit: "ml",
+      serving_size: "1 portion (330 ml)",
+      serving_quantity: 330,
+      serving_quantity_unit: "ml",
+      nutriments: { "energy-kcal_100g": 42.4, sugars_100g: 10.6, "saturated-fat_100g": 0, carbohydrates_100g: 10.6 },
+    };
+    expect(parseOffProduct(cola, "5449000000996")).toMatchObject({
+      unit: "ml",
+      calories: 42,
+      sugars: 10.6,
+      saturatedFat: 0,
+      serving: { grams: 330, label: "1 portion" },
+    });
+  });
+
+  it("recognises drinks from the pack size alone", () => {
+    const p = { ...oceanSpray, serving_quantity_unit: undefined, quantity: "1.5 L" };
+    expect(parseOffProduct(p, "1")?.unit).toBe("ml");
+  });
+
+  it("skips servings in a different unit from the food", () => {
+    const p = { ...oceanSpray, product_quantity_unit: "g", serving_quantity_unit: "ml" };
     expect(parseOffProduct(p, "1")?.serving).toBeUndefined();
+  });
+
+  it("reads sugars and saturated fat", () => {
+    const p = { ...oceanSpray, nutriments: { ...oceanSpray.nutriments, sugars_100g: 60, "saturated-fat_100g": 16 } };
+    expect(parseOffProduct(p, "1")).toMatchObject({ sugars: 60, saturatedFat: 16 });
   });
 
   it("converts kJ when kcal is missing", () => {

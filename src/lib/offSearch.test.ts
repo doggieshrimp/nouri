@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { cleanQuery, localeHints, parseHits, searchOpenFoodFacts, type HttpGet, type OffSearchHit } from "./offSearch";
+import { localeHints, parseHits, searchOpenFoodFacts, type HttpGet, type OffSearchHit } from "./offSearch";
+import { cleanQuery } from "./searchQuery";
 
 // Trimmed from real search.openfoodfacts.org hits for "crumpets".
 const warburtons: OffSearchHit = {
@@ -30,12 +31,13 @@ describe("localeHints", () => {
 });
 
 describe("cleanQuery", () => {
-  it("removes search syntax characters", () => {
+  it("removes characters that break search syntax", () => {
     expect(cleanQuery('bread "rolls" (white):')).toBe("bread rolls white");
+    expect(cleanQuery("beef 85/15 [lean] tea!")).toBe("beef 85 15 lean tea");
   });
 
-  it("keeps apostrophes, ampersands and accents", () => {
-    expect(cleanQuery("M&S pain au chocolat, Sainsbury's crème")).toBe("M&S pain au chocolat Sainsbury's crème");
+  it("keeps apostrophes, ampersands, percentages and accents", () => {
+    expect(cleanQuery("M&S pain au chocolat, Sainsbury's crème 5% fat")).toBe("M&S pain au chocolat, Sainsbury's crème 5% fat");
   });
 });
 

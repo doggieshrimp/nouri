@@ -4,7 +4,7 @@ import { Loader2, ScanBarcode, Search, X } from "lucide-react";
 import { FOOD_DB } from "../data/foods";
 import { addEntry, addMealToDay, deleteMeal, getMeals, getRecentItems, type LogItem, type Meal } from "../db";
 import type { DateKey } from "../lib/dates";
-import { entryName, scaleFood, sumMacros, type Food } from "../lib/nutrition";
+import { entryName, scaleFood, sumMacros, unitOf, type Food } from "../lib/nutrition";
 import { canScan, scanBarcode } from "../lib/scanner";
 import { canSearchOpenFoodFacts, searchOpenFoodFacts } from "../lib/offSearch";
 import { lookupBarcode } from "../lib/openFoodFacts";
@@ -46,8 +46,8 @@ function FoodRows({ label, foods, onPick }: { label: string; foods: Food[]; onPi
           <Row
             key={`${label}-${f.fdcId ?? f.barcode ?? f.name}`}
             title={f.name}
-            subtitle={[f.brand, f.serving && `${f.serving.label} = ${f.serving.grams} g`].filter(Boolean).join(" · ")}
-            right={`${f.calories} kcal/100g`}
+            subtitle={[f.brand, f.serving && `${f.serving.label} = ${f.serving.grams} ${unitOf(f)}`].filter(Boolean).join(" · ")}
+            right={`${f.calories} kcal/100${unitOf(f)}`}
             onClick={() => onPick(f)}
           />
         ))}
@@ -220,7 +220,7 @@ export default function FoodSearch({ date }: { date: DateKey }) {
         <FoodEditor
           key={selected.food.fdcId ?? selected.food.barcode ?? selected.food.name}
           food={selected.food}
-          initialGrams={selected.grams}
+          initialAmount={selected.grams}
           onAdd={(grams) => addFood(selected.food, grams)}
           onCancel={() => setSelected(null)}
         />
@@ -309,7 +309,7 @@ export default function FoodSearch({ date }: { date: DateKey }) {
               <SectionLabel>Common foods</SectionLabel>
               <ul>
                 {commonMatches.map((f) => (
-                  <Row key={`c-${f.name}`} title={f.name} right={`${f.calories} kcal/100g`} onClick={() => setSelected({ food: f })} />
+                  <Row key={`c-${f.name}`} title={f.name} right={`${f.calories} kcal/100${unitOf(f)}`} onClick={() => setSelected({ food: f })} />
                 ))}
               </ul>
             </>

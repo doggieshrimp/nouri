@@ -1,9 +1,10 @@
-import { plausibleKcalPer100g, round1, type Food } from "./nutrition";
+import { plausibleKcalPer100g, round1, type Food, type Unit } from "./nutrition";
 
 // Open Food Facts: free, worldwide product database (includes USDA's branded foods).
 // https://openfoodfacts.github.io/openfoodfacts-server/api/
 const PRODUCT_URL = "https://world.openfoodfacts.org/api/v2/product";
-const FIELDS = "code,product_name,product_name_en,generic_name,brands,nutriments,serving_size,serving_quantity,serving_quantity_unit";
+const FIELDS =
+  "code,product_name,product_name_en,generic_name,brands,nutriments,serving_size,serving_quantity,serving_quantity_unit,quantity,product_quantity_unit";
 
 export interface OffProduct {
   code?: string;
@@ -15,6 +16,9 @@ export interface OffProduct {
   serving_size?: string;
   serving_quantity?: number | string;
   serving_quantity_unit?: string;
+  /** Pack size as printed, e.g. "330 ml" or "6". */
+  quantity?: string;
+  product_quantity_unit?: string;
 }
 
 export type BarcodeLookup =
@@ -49,20 +53,29 @@ function num(v: unknown): number | undefined {
   return typeof n === "number" && Number.isFinite(n) ? n : undefined;
 }
 
-function servingFrom(p: OffProduct): Food["serving"] {
-  const grams = num(p.serving_quantity);
+/** Drinks are sold by volume; Open Food Facts then reports nutrition per 100ml. */
+export function offUnit(p: OffProduct): Unit {
+  // The pack size decides; the serving unit is the fallback (a powder can have an ml scoop).
+  for (const unit of [p.product_quantity_unit, p.serving_quantity_unit].map((u) => u?.toLowerCase())) {
+    if (unit === "ml" || unit === "g") return unit;
+  }
+  return /\d\s*(ml|cl|l)\b/i.test(p.quantity ?? "") ? "ml" : "g";
+}
+
+function servingFrom(p: OffProduct, foodUnit: Unit): Food["serving"] {
+  const amount = num(p.serving_quantity);
   const unit = p.serving_quantity_unit?.toLowerCase();
-  if (!grams || grams <= 0 || (unit && unit !== "g")) return undefined;
+  if (!amount || amount <= 0 || (unit && unit !== foodUnit)) return undefined;
 
   // serving_size looks like "30 g (2 Tbsp)", "1 bar (40 g)", or just "30 g".
   const text = p.serving_size?.trim() ?? "";
   const paren = text.match(/\(([^)]+)\)/)?.[1]?.trim();
   const outside = text.replace(/\([^)]*\)/g, "").trim();
-  const isJustGrams = (s: string) => /^[\d.,]+\s*g$/i.test(s);
+  const isJustAmount = (s: string) => /^[\d.,]+\s*(g|ml)$/i.test(s);
   let label = "1 serving";
-  if (outside && !isJustGrams(outside)) label = outside;
-  else if (paren && !isJustGrams(paren)) label = paren;
-  return { grams: round1(grams), label: label.toLowerCase() };
+  if (outside && !isJustAmount(outside)) label = outside;
+  else if (paren && !isJustAmount(paren)) label = paren;
+  return { grams: round1(amount), label: label.toLowerCase() };
 }
 
 export function productName(p: OffProduct): string {
@@ -77,6 +90,9 @@ export function parseOffProduct(p: OffProduct, barcode: string): Food | null {
   if (kcal === null) return null;
 
   const brand = p.brands?.split(",")[0]?.trim();
+  const unit = offUnit(p);
+  const sugars = num(n["sugars_100g"]);
+  const saturatedFat = num(n["saturated-fat_100g"]);
   return {
     name: productName(p) || "Unnamed product",
     brand: brand || undefined,
@@ -85,7 +101,10 @@ export function parseOffProduct(p: OffProduct, barcode: string): Food | null {
     protein: round1(num(n["proteins_100g"]) ?? 0),
     carbs: round1(num(n["carbohydrates_100g"]) ?? 0),
     fat: round1(num(n["fat_100g"]) ?? 0),
-    serving: servingFrom(p),
+    ...(sugars !== undefined ? { sugars: round1(sugars) } : {}),
+    ...(saturatedFat !== undefined ? { saturatedFat: round1(saturatedFat) } : {}),
+    ...(unit === "ml" ? { unit } : {}),
+    serving: servingFrom(p, unit),
   };
 }
 

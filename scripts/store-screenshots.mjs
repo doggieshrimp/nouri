@@ -155,7 +155,7 @@ const SEED = `
   await log(local("Chicken breast, raw"), 120);
   await log(local("Avocado"), 50);
   await log(local("Spinach, raw"), 30);
-  await db.addEntry(day, { name: "Coffee with milk", calories: 40, protein: 2, carbs: 3, fat: 2 });
+  await db.addEntry(day, { name: "Coffee with milk", calories: 40, protein: 2, carbs: 3, fat: 2, sugars: 3, saturatedFat: 1.2 });
 
   const entries = await db.getEntriesForDate(day);
   await db.saveMeal("Usual breakfast", entries.slice(0, 3));

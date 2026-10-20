@@ -65,8 +65,13 @@ export async function deleteEntry(id: string): Promise<void> {
   await db.entries.delete(id);
 }
 
-function itemFrom({ name, calories, protein, carbs, fat, food, grams }: LogItem): LogItem {
-  return food ? { name, calories, protein, carbs, fat, food, grams } : { name, calories, protein, carbs, fat };
+/** Copies just the loggable fields of an entry (drops id, date and createdAt). */
+function itemFrom({ name, calories, protein, carbs, fat, sugars, saturatedFat, food, grams }: LogItem): LogItem {
+  const item: LogItem = { name, calories, protein, carbs, fat };
+  if (sugars !== undefined) item.sugars = sugars;
+  if (saturatedFat !== undefined) item.saturatedFat = saturatedFat;
+  if (food) Object.assign(item, { food, grams });
+  return item;
 }
 
 function recentKey(item: LogItem): string {
@@ -158,6 +163,7 @@ function isLogItem(v: unknown): v is LogItem {
   return (
     typeof v.name === "string" &&
     ["calories", "protein", "carbs", "fat"].every((k) => typeof v[k] === "number") &&
+    ["sugars", "saturatedFat"].every((k) => v[k] === undefined || typeof v[k] === "number") &&
     (v.food === undefined || (isRecord(v.food) && typeof v.food.calories === "number"))
   );
 }

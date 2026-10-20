@@ -96,6 +96,12 @@ describe("recent items", () => {
     expect(recent[0].grams).toBe(120);
   });
 
+  it("keeps sugars and saturates", async () => {
+    await addEntry("2026-10-09", { ...apple, sugars: 10.4, saturatedFat: 0 });
+    const [recent] = await getRecentItems();
+    expect(recent).toMatchObject({ sugars: 10.4, saturatedFat: 0 });
+  });
+
   it("respects the limit", async () => {
     for (const name of ["A", "B", "C"]) await addEntry("2026-10-09", { ...apple, name });
     expect(await getRecentItems(2)).toHaveLength(2);

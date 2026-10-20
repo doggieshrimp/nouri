@@ -41,7 +41,8 @@ try {
   $task = if ($Release) { "bundleRelease" } else { "assembleDebug" }
   Push-Location android
   try {
-    .\gradlew.bat $task --console=plain
+    # No daemon: on this machine a reused Gradle daemon can hang indefinitely.
+    .\gradlew.bat $task --console=plain --no-daemon
     if ($LASTEXITCODE -ne 0) { throw "Gradle build failed." }
   } finally { Pop-Location }
 

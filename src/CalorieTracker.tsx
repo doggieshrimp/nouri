@@ -160,15 +160,28 @@ export default function CalorieTracker() {
           <div className="grid grid-cols-3 gap-2 mt-4 pt-3" style={{ borderTop: `8px solid ${INK}` }}>
             {[
               { label: "Protein", value: totals.protein },
-              { label: "Carbs", value: totals.carbs },
-              { label: "Fat", value: totals.fat },
+              { label: "Carbs", value: totals.carbs, sub: { label: "of which sugars", value: totals.sugars, partial: totals.sugarsIncomplete } },
+              { label: "Fat", value: totals.fat, sub: { label: "of which saturates", value: totals.saturatedFat, partial: totals.saturatedFatIncomplete } },
             ].map((m) => (
               <div key={m.label} className="text-center">
                 <div className="text-xs uppercase tracking-wide opacity-70">{m.label}</div>
                 <div className="font-mono font-bold text-lg">{m.value}g</div>
+                {m.sub && (
+                  <div className="mt-1">
+                    <div className="text-[0.6875rem] opacity-70">{m.sub.label}</div>
+                    <div className="font-mono text-sm">
+                      {m.sub.value}g{m.sub.partial && entries.length > 0 && <span aria-hidden>*</span>}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
+          {(totals.sugarsIncomplete || totals.saturatedFatIncomplete) && entries.length > 0 && (
+            <p className="text-[0.6875rem] opacity-70 mt-2 text-center">
+              * Some foods today don&rsquo;t list this, so the real amount may be higher.
+            </p>
+          )}
         </div>
 
         {showCalculator && (

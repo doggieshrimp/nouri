@@ -1,6 +1,7 @@
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import type { Food } from "./nutrition";
 import { parseOffProduct, type OffProduct } from "./openFoodFacts";
+import { cleanQuery } from "./searchQuery";
 
 // Open Food Facts product search (search-a-licious), strong on UK and European groceries.
 // It doesn't send CORS headers, so browsers can't read it: the Android app calls it
@@ -36,14 +37,6 @@ export function localeHints(locale: string): { lang: string; countryTag: string 
   }
 }
 
-/** Keeps letters, numbers and simple punctuation so the query can't break the search syntax. */
-export function cleanQuery(query: string): string {
-  return query
-    .replace(/[^\p{L}\p{N}\s'&-]/gu, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 /** Converts search hits to foods, preferring the reader's language and dropping repeats. */
 export function parseHits(hits: OffSearchHit[], lang: string): Food[] {
   const foods: Food[] = [];
@@ -69,10 +62,10 @@ export async function searchOpenFoodFacts(
   locale = navigator.language,
   get: HttpGet = nativeGet,
 ): Promise<Food[]> {
-  const q = cleanQuery(query);
+  const q = cleanQuery(query).replace(/[,.%]/g, " ").replace(/\s+/g, " ").trim();
   if (q.length < 2) return [];
   const { lang, countryTag } = localeHints(locale);
-  const fields = `code,product_name,product_name_${lang},brands,nutriments,serving_size,serving_quantity,serving_quantity_unit`;
+  const fields = `code,product_name,product_name_${lang},brands,nutriments,serving_size,serving_quantity,serving_quantity_unit,quantity,product_quantity_unit`;
 
   async function run(fullQuery: string): Promise<Food[]> {
     const { status, data } = await get(SEARCH_URL, { q: fullQuery, page_size: "24", langs: lang, fields });

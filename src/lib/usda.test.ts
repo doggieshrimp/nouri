@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { parseUsdaFood, searchUsda, UsdaError, type UsdaFood } from "./usda";
+import { parseUsdaFood, searchUsda, usdaUnit, UsdaError, type UsdaFood } from "./usda";
 
 // Trimmed from real FoodData Central search responses.
 const chobani: UsdaFood = {
@@ -81,12 +81,61 @@ describe("parseUsdaFood", () => {
     expect(food?.calories).toBe(378);
   });
 
-  it("ignores servings not measured in grams", () => {
-    expect(parseUsdaFood({ ...chobani, servingSizeUnit: "ml" })?.serving).toBeUndefined();
+  it("treats branded products sold by volume as drinks, per 100ml", () => {
+    const cola: UsdaFood = {
+      ...chobani,
+      description: "COCA-COLA, COLA",
+      brandName: "COCA-COLA",
+      servingSize: 355,
+      servingSizeUnit: "MLT",
+      householdServingFullText: "1 CAN",
+      foodNutrients: [
+        { nutrientId: 1008, unitName: "KCAL", value: 39 },
+        { nutrientId: 2000, unitName: "G", value: 11 },
+      ],
+    };
+    expect(parseUsdaFood(cola)).toMatchObject({ unit: "ml", calories: 39, sugars: 11, serving: { grams: 355, label: "1 can" } });
+  });
+
+  it("reads sugars and saturated fat, and leaves them out when not reported", () => {
+    const withBoth = {
+      ...rotisserie,
+      foodNutrients: [...rotisserie.foodNutrients!, { nutrientId: 2000, value: 0.1 }, { nutrientId: 1258, value: 1.04 }],
+    };
+    expect(parseUsdaFood(withBoth)).toMatchObject({ sugars: 0.1, saturatedFat: 1 });
+    expect(parseUsdaFood(rotisserie)).not.toHaveProperty("sugars");
   });
 
   it("title-cases multi-word brands", () => {
     expect(parseUsdaFood({ ...chobani, brandName: "TRADER JOE'S" })?.brand).toBe("Trader Joe's");
+  });
+});
+
+describe("usdaUnit", () => {
+  const generic = (description: string, foodCategory: string, dataType = "Survey (FNDDS)"): UsdaFood => ({
+    fdcId: 1,
+    description,
+    foodCategory,
+    dataType,
+  });
+
+  it("recognises drinks from their category", () => {
+    expect(usdaUnit(generic("Milk, whole", "Milk, whole"))).toBe("ml");
+    expect(usdaUnit(generic("Cola", "Soft drinks"))).toBe("ml");
+    expect(usdaUnit(generic("Tea, hot, leaf, black", "Tea"))).toBe("ml");
+    expect(usdaUnit(generic("Orange juice, 100%, freshly squeezed", "Citrus juice"))).toBe("ml");
+  });
+
+  it("needs a drink name in categories that mix food and drink", () => {
+    expect(usdaUnit(generic("Bananas, raw", "Fruits and Fruit Juices", "SR Legacy"))).toBe("g");
+    expect(usdaUnit(generic("Orange juice, raw", "Fruits and Fruit Juices", "SR Legacy"))).toBe("ml");
+    expect(usdaUnit(generic("Cheese, cheddar", "Dairy and Egg Products", "SR Legacy"))).toBe("g");
+  });
+
+  it("keeps powders and solids in grams", () => {
+    expect(usdaUnit(generic("Milk, dry, whole", "Milk, whole"))).toBe("g");
+    expect(usdaUnit(generic("Coffee, instant, powder", "Coffee"))).toBe("g");
+    expect(usdaUnit(generic("Steak, grilled", "Beef, excludes ground"))).toBe("g");
   });
 });
 
@@ -108,6 +157,13 @@ describe("searchUsda", () => {
     const results = await searchUsda("chicken");
     expect(results.generic.map((f) => f.fdcId)).toEqual([2705964]);
     expect(results.branded.map((f) => f.fdcId)).toEqual([2038865]);
+  });
+
+  it("removes characters USDA rejects", async () => {
+    stubFetch({});
+    await searchUsda("beef 85/15 [lean]!");
+    const [, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(init.body as string).query).toBe("beef 85 15 lean");
   });
 
   it("sends the search as a JSON POST", async () => {

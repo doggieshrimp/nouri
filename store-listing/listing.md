@@ -29,7 +29,8 @@ Find your food fast
 Log your day in seconds
 • Recent foods remember the amount you had last time
 • Save your usual meals and log them again in one tap
-• See calories, protein, carbs and fat for every day, and look back at past days
+• See calories, protein, carbs, sugars, fat and saturated fat for every day, and look back at past days
+• Drinks are measured in millilitres, with label servings like "1 can"
 
 Set a goal that fits you
 • Get a suggested daily calorie goal from your height, weight, age and activity
