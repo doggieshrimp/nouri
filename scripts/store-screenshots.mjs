@@ -241,7 +241,7 @@ const scenes = [
     caption: "See if you hit your goals",
     sub: "Every day of the week or month at a glance",
     run: `
-      [...document.querySelectorAll('[role="radio"]')].find((b) => b.textContent.trim() === "Progress").click();
+      [...document.querySelectorAll("nav button")].find((b) => b.textContent.trim() === "Track").click();
       await sleep(500);
       // Last week is complete, which shows the chart better than a half-finished week.
       $('[aria-label="Previous week"]').click();
@@ -258,7 +258,7 @@ const scenes = [
     caption: "Watch your weight trend",
     sub: "A 7-day average smooths out daily ups and downs",
     run: `
-      [...document.querySelectorAll('[role="radio"]')].find((b) => b.textContent.trim() === "Progress").click();
+      [...document.querySelectorAll("nav button")].find((b) => b.textContent.trim() === "Track").click();
       await sleep(400);
       [...document.querySelectorAll('[role="radio"]')].find((b) => b.textContent.trim() === "Month").click();
       await sleep(600);
@@ -271,7 +271,7 @@ const scenes = [
     sub: "Dyslexia-friendly fonts, colours and spacing",
     appearance: { background: "yellow", font: "atkinson", textSize: 1.125, extraSpacing: false, plainText: true },
     run: `
-      $('[aria-label="Display and reading settings"]').click();
+      $('[aria-label="Settings"]').click();
       await sleep(300);
       window.scrollTo(0, 0);
     `,

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Calculator, ChevronLeft, ChevronRight, Flame, Type } from "lucide-react";
+import { Calculator, ChevronLeft, ChevronRight, Flame, Settings } from "lucide-react";
 import AboutFooter from "./components/AboutFooter";
 import BackupControls from "./components/BackupControls";
 import DisplaySettings from "./components/DisplaySettings";
@@ -8,7 +8,7 @@ import EntryList from "./components/EntryList";
 import FoodSearch from "./components/FoodSearch";
 import GoalCalculator from "./components/GoalCalculator";
 import Progress from "./components/Progress";
-import Segmented from "./components/Segmented";
+import BottomNav, { BOTTOM_NAV_HEIGHT, type Page } from "./components/BottomNav";
 import { DEFAULT_GOAL, getEntriesForDate, getGoal, getGoalHistory, setGoal, type LogEntry } from "./db";
 import { addDays, formatDateKey, todayKey, type DateKey } from "./lib/dates";
 import { goalPercent, sumMacros } from "./lib/nutrition";
@@ -18,7 +18,7 @@ import { ALERT, GOOD, INK, PAPER, TRACK } from "./theme";
 const NO_ENTRIES: LogEntry[] = [];
 
 export default function CalorieTracker() {
-  const [view, setView] = useState<"log" | "progress">("log");
+  const [view, setView] = useState<Page>("log");
   const [date, setDate] = useState<DateKey>(todayKey);
   const isToday = date === todayKey();
 
@@ -51,7 +51,8 @@ export default function CalorieTracker() {
   return (
     <div
       className="min-h-full w-full flex items-start justify-center p-4 sm:p-8"
-      style={{ background: PAPER, color: INK, fontFamily: "var(--font-body)" }}
+      // Leave room so the fixed bottom bar never covers the end of the page.
+      style={{ background: PAPER, color: INK, fontFamily: "var(--font-body)", paddingBottom: BOTTOM_NAV_HEIGHT + 16 }}
     >
       <div className="w-full max-w-md">
         {/* Masthead */}
@@ -71,23 +72,12 @@ export default function CalorieTracker() {
               type="button"
               onClick={() => setShowDisplay((v) => !v)}
               className="opacity-70 hover:opacity-100 p-1 -m-1 self-center"
-              aria-label="Display and reading settings"
+              aria-label="Settings"
               aria-expanded={showDisplay}
             >
-              <Type size={20} />
+              <Settings size={20} />
             </button>
           </div>
-        </div>
-        <div className="my-2">
-          <Segmented
-            label="Page"
-            value={view}
-            onChange={setView}
-            options={[
-              { value: "log", label: "Food log" },
-              { value: "progress", label: "Progress" },
-            ]}
-          />
         </div>
         {view === "log" && (
         <div className="flex items-center justify-between mb-1">
@@ -118,7 +108,7 @@ export default function CalorieTracker() {
 
         {showDisplay && <DisplaySettings onClose={() => setShowDisplay(false)} />}
 
-        {view === "progress" ? (
+        {view === "track" ? (
           <Progress
             onOpenDay={(day) => {
               setDate(day);
@@ -232,6 +222,14 @@ export default function CalorieTracker() {
         <BackupControls />
         <AboutFooter />
       </div>
+
+      <BottomNav
+        page={view}
+        onChange={(page) => {
+          setView(page);
+          window.scrollTo(0, 0);
+        }}
+      />
     </div>
   );
 }
