@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -30,6 +31,15 @@
         <!-- Pre-download Google's barcode scanner UI (used by @capacitor-mlkit/barcode-scanning).
              It needs no camera permission, so none is requested. -->
         <meta-data android:name="com.google.mlkit.vision.DEPENDENCIES" android:value="barcode_ui"/>
+
+        <!-- ML Kit's invisible scanner delegate is locked to portrait, which Play flags because
+             Android 16 ignores orientation locks on large screens. Unlock it, and handle rotation
+             in place so the activity isn't recreated (the reason ML Kit locked it). -->
+        <activity
+            android:name="com.google.mlkit.vision.codescanner.internal.GmsBarcodeScanningDelegateActivity"
+            android:screenOrientation="unspecified"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            tools:replace="android:screenOrientation" />
     </application>
 
     <!-- Permissions -->
