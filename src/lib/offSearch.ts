@@ -2,12 +2,15 @@ import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import type { Food } from "./nutrition";
 import { parseOffProduct, type OffProduct } from "./openFoodFacts";
 import { cleanQuery } from "./searchQuery";
+import { findStore, storeClause } from "./stores";
 
 // Open Food Facts product search (search-a-licious), strong on UK and European groceries.
 // It doesn't send CORS headers, so browsers can't read it: the Android app calls it
 // through Capacitor's native HTTP instead, and the web version skips it.
 const SEARCH_URL = "https://search.openfoodfacts.org/search";
 const MAX_RESULTS = 10;
+/** A store search is the only results section, so it can show more. */
+const MAX_STORE_RESULTS = 20;
 /** Below this many usable results in the reader's country, also search worldwide. */
 const MIN_LOCAL_RESULTS = 4;
 
@@ -62,8 +65,9 @@ export async function searchOpenFoodFacts(
   locale = navigator.language,
   get: HttpGet = nativeGet,
 ): Promise<Food[]> {
-  const q = cleanQuery(query).replace(/[,.%]/g, " ").replace(/\s+/g, " ").trim();
-  if (q.length < 2) return [];
+  const store = findStore(query);
+  const q = cleanQuery(store ? store.rest : query).replace(/[,.%]/g, " ").replace(/\s+/g, " ").trim();
+  if (q.length < 2 && !store) return [];
   const { lang, countryTag } = localeHints(locale);
   const fields = `code,product_name,product_name_${lang},brands,nutriments,serving_size,serving_quantity,serving_quantity_unit,quantity,product_quantity_unit`;
 
@@ -72,6 +76,9 @@ export async function searchOpenFoodFacts(
     if (status < 200 || status >= 300) throw new Error(`Open Food Facts search failed (${status})`);
     return parseHits(((data as { hits?: OffSearchHit[] })?.hits ?? []), lang);
   }
+
+  // A named supermarket: only its own-brand products, in any country it sells in.
+  if (store) return (await run(`${q} ${storeClause(store.store)}`.trim())).slice(0, MAX_STORE_RESULTS);
 
   let foods = countryTag ? await run(`${q} countries_tags:"${countryTag}"`) : [];
   if (foods.length < MIN_LOCAL_RESULTS) {

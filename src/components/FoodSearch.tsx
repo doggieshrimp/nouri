@@ -8,6 +8,7 @@ import { entryName, scaleFood, sumMacros, unitOf, type Food } from "../lib/nutri
 import { canScan, scanBarcode } from "../lib/scanner";
 import { canSearchOpenFoodFacts, searchOpenFoodFacts } from "../lib/offSearch";
 import { lookupBarcode } from "../lib/openFoodFacts";
+import { findStore } from "../lib/stores";
 import { searchUsda, UsdaError } from "../lib/usda";
 import { useDebounced } from "../lib/useDebounced";
 import { ALERT, GOLD, INK, PAPER, RULE } from "../theme";
@@ -92,8 +93,12 @@ export default function FoodSearch({ date }: { date: DateKey }) {
   const [usda, setUsda] = useState<UsdaResult>({ query: "", generic: [], branded: [], error: null });
   const [off, setOff] = useState<OffResult>({ query: "", foods: [] });
 
+  // Naming a supermarket ("pork tesco") searches only its own-brand products, which the
+  // US database doesn't have. Needs Open Food Facts, so the web version ignores store names.
+  const store = useMemo(() => (canSearchOpenFoodFacts ? findStore(trimmed)?.store ?? null : null), [trimmed]);
+
   useEffect(() => {
-    if (debounced.length < 2) return;
+    if (debounced.length < 2 || (canSearchOpenFoodFacts && findStore(debounced))) return;
     const ctrl = new AbortController();
     searchUsda(debounced, ctrl.signal).then(
       ({ generic, branded }) => setUsda({ query: debounced, generic, branded, error: null }),
@@ -145,10 +150,10 @@ export default function FoodSearch({ date }: { date: DateKey }) {
     () => (q ? FOOD_DB.filter((f) => f.name.toLowerCase().includes(q)).slice(0, 4) : []),
     [q],
   );
-  const usdaCurrent = usda.query === trimmed;
+  const usdaCurrent = !store && usda.query === trimmed;
   const offCurrent = !canSearchOpenFoodFacts || off.query === trimmed;
   const offFoods = canSearchOpenFoodFacts && off.query === trimmed ? off.foods : [];
-  const searching = trimmed.length >= 2 && (!usdaCurrent || !offCurrent);
+  const searching = trimmed.length >= 2 && ((!store && !usdaCurrent) || !offCurrent);
 
   function flash(message: string) {
     setStatus(message);
@@ -315,7 +320,7 @@ export default function FoodSearch({ date }: { date: DateKey }) {
             </>
           )}
           {usdaCurrent && <FoodRows label="Basic foods" foods={usda.generic} onPick={pick} />}
-          <FoodRows label="Products" foods={offFoods} onPick={pick} />
+          <FoodRows label={store ? `${store.name} products` : "Products"} foods={offFoods} onPick={pick} />
           {usdaCurrent && (
             <FoodRows label={canSearchOpenFoodFacts ? "US products" : "Branded products"} foods={usda.branded} onPick={pick} />
           )}
@@ -324,7 +329,9 @@ export default function FoodSearch({ date }: { date: DateKey }) {
           )}
           {searching && !hasTypedResults && <div className="px-3 py-2 text-xs opacity-70 italic">Searching…</div>}
           {!searching && !hasTypedResults && !usda.error && (
-            <div className="px-3 py-2 text-xs opacity-70 italic">No matches.</div>
+            <div className="px-3 py-2 text-xs opacity-70 italic">
+              {store ? `No ${store.name} products found.` : "No matches."}
+            </div>
           )}
           <div className="px-3 py-2" style={{ borderTop: `1px solid ${RULE}` }}>
             <button type="button" className="text-xs underline opacity-70" onClick={() => openCustom(trimmed)}>

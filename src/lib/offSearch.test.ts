@@ -80,6 +80,14 @@ describe("searchOpenFoodFacts", () => {
     expect(get).toHaveBeenCalledTimes(2);
   });
 
+  it("searches only a named store's own brand, worldwide", async () => {
+    const tescoCrumpets = { ...warburtons, code: "5", brands: ["Tesco"] };
+    const get = fakeGet({ 'crumpets brands_tags:("tesco" OR "tesco-finest")': [tescoCrumpets] });
+    const foods = await searchOpenFoodFacts("Tesco crumpets", "en-GB", get);
+    expect(foods.map((f) => f.brand)).toEqual(["Tesco"]);
+    expect(get).toHaveBeenCalledTimes(1);
+  });
+
   it("throws on errors so the caller can hide the section", async () => {
     const get = vi.fn<HttpGet>(async () => ({ status: 503, data: null }));
     await expect(searchOpenFoodFacts("crumpets", "en", get)).rejects.toThrow("503");
